@@ -64,8 +64,8 @@ function providersConfigured(req) {
     google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     github: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET),
     redirectUris: {
-      google: `${origin}/api/auth/google/callback`,
-      github: `${origin}/api/auth/github/callback`,
+      google: `${origin}/auth/google/callback`,
+      github: `${origin}/auth/github/callback`,
     },
     publicOrigin: origin,
   };
