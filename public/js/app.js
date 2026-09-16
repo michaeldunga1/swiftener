@@ -22,12 +22,21 @@ import {
   renderAdminPostEditor,
   renderAdminUsers,
   renderAdminReports,
+  renderAdminAnalytics,
+  renderAdminErrors,
+  renderAdminDatabase,
 } from './pages/admin.js';
 import {
   renderNewsletter,
   renderNewsletterVerify,
   renderNewsletterUnsubscribe,
 } from './pages/newsletter.js';
+import {
+  renderAbout,
+  renderContact,
+  renderPrivacy,
+  renderTerms,
+} from './pages/static.js';
 
 function renderNav() {
   const nav = document.getElementById('nav-main');
@@ -51,6 +60,7 @@ function renderNav() {
       clearUser();
       toast('Logged out');
       renderNav();
+      renderFooter();
       navigate('/');
     });
   } else {
@@ -59,6 +69,30 @@ function renderNav() {
       <a href="/register" data-link class="btn btn-primary">Sign up</a>
     `;
   }
+}
+
+function renderFooter() {
+  const nav = document.getElementById('footer-nav');
+  const year = document.getElementById('footer-year');
+  if (year) year.textContent = String(new Date().getFullYear());
+  if (!nav) return;
+
+  const user = getUser();
+  const links = [
+    ['/', 'Home'],
+    ['/#search', 'Search'],
+    ['/newsletter', 'Resources'],
+    ['/#categories', 'Categories'],
+    user ? ['/profile/saved', 'Saved'] : ['/login', 'Log in'],
+    ['/about', 'About'],
+    ['/contact', 'Contact'],
+    ['/privacy', 'Privacy Policy'],
+    ['/terms', 'Terms of Use'],
+  ];
+
+  nav.innerHTML = links
+    .map(([href, label]) => `<a href="${href}" data-link>${label}</a>`)
+    .join('');
 }
 
 route(/^\/$/, renderHome);
@@ -77,14 +111,85 @@ route(/^\/newsletter$/, renderNewsletter);
 route(/^\/newsletter\/verify$/, renderNewsletterVerify);
 route(/^\/newsletter\/unsubscribe$/, renderNewsletterUnsubscribe);
 route(/^\/admin$/, renderAdminDashboard);
+route(/^\/admin\/analytics$/, renderAdminAnalytics);
+route(/^\/admin\/errors$/, renderAdminErrors);
+route(/^\/admin\/database$/, renderAdminDatabase);
 route(/^\/admin\/drafts$/, renderAdminDrafts);
 route(/^\/admin\/posts\/new$/, (root) => renderAdminPostEditor(root, {}));
 route(/^\/admin\/posts\/edit\/(?<id>\d+)$/, (root, params) => renderAdminPostEditor(root, params));
 route(/^\/admin\/users$/, renderAdminUsers);
 route(/^\/admin\/reports$/, renderAdminReports);
+route(/^\/about$/, renderAbout);
+route(/^\/contact$/, renderContact);
+route(/^\/privacy$/, renderPrivacy);
+route(/^\/terms$/, renderTerms);
+
+function trackPageLoad() {
+  const path = window.location.pathname || '/';
+  if (path.startsWith('/api/')) return;
+
+  const uaData = navigator.userAgentData;
+  const platform =
+    navigator.platform ||
+    (uaData?.platform ? `${uaData.platform}${uaData.architecture ? ` ${uaData.architecture}` : ''}` : '') ||
+    '';
+
+  const payload = {
+    path,
+    fullUrl: window.location.href,
+    queryString: window.location.search || '',
+    referrer: document.referrer || '',
+    language: navigator.language || (navigator.languages && navigator.languages[0]) || '',
+    platform,
+    screenWidth: window.screen?.width,
+    screenHeight: window.screen?.height,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    userAgent: navigator.userAgent || '',
+  };
+  // Fire-and-forget; do not block navigation
+  api.post('/analytics/pageview', payload).catch(() => {});
+}
+
+function reportClientError(payload) {
+  api.post('/analytics/error', {
+    path: window.location.pathname || '/',
+    fullUrl: window.location.href,
+    referrer: document.referrer || '',
+    userAgent: navigator.userAgent || '',
+    ...payload,
+  }).catch(() => {});
+}
+
+function initClientErrorLogging() {
+  window.addEventListener('error', (event) => {
+    reportClientError({
+      type: 'error',
+      message: event.message || String(event.error || 'Script error'),
+      stack: event.error?.stack || '',
+      filename: event.filename || '',
+      lineno: event.lineno,
+      colno: event.colno,
+    });
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    reportClientError({
+      type: 'unhandledrejection',
+      message: reason?.message || String(reason || 'Unhandled promise rejection'),
+      stack: reason?.stack || '',
+    });
+  });
+}
 
 async function boot() {
-  setAfterRender(renderNav);
+  initClientErrorLogging();
+  setAfterRender(() => {
+    renderNav();
+    renderFooter();
+    trackPageLoad();
+  });
   initRouter();
   try {
     await refreshUser();
@@ -92,6 +197,7 @@ async function boot() {
     clearUser();
   }
   renderNav();
+  renderFooter();
   await renderCurrent();
 }
 

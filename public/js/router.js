@@ -39,6 +39,22 @@ export async function renderCurrent() {
     else await routes[0].handler(app, {});
   } catch (err) {
     app.innerHTML = `<div class="panel"><h2>Something went wrong</h2><p>${err.message || 'Error'}</p></div>`;
+    try {
+      await fetch('/api/analytics/error', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'route_render',
+          message: err?.message || String(err),
+          stack: err?.stack || '',
+          path: pathname,
+          fullUrl: window.location.href,
+        }),
+      });
+    } catch {
+      /* ignore */
+    }
   }
   afterRender();
 }

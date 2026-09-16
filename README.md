@@ -27,7 +27,8 @@ The database file is created automatically at `SQLITE_PATH` (default
 | `/posts/:slug` | Article, engagement, comments |
 | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Auth |
 | `/profile`, `/profile/saved`, `/profile/liked`, `/profile/bookmarked`, `/profile/notifications` | Account |
-| `/admin`, `/admin/drafts`, `/admin/posts/new`, `/admin/users`, `/admin/reports` | Admin (role `admin`) |
+| `/admin`, `/admin/database`, `/admin/errors`, `/admin/analytics`, `/admin/drafts`, `/admin/posts/new`, `/admin/users`, `/admin/reports` | Admin (role `admin`) |
+| `/about`, `/contact`, `/privacy`, `/terms` | Static site pages |
 | `/newsletter` | Subscribe |
 
 Mount the routers under your existing app, or run `app.js` standalone and
@@ -129,7 +130,8 @@ into it instead of running this app.js separately.
 `GET /dashboard`, `GET /users`, `POST /users/:id/make-admin`,
 `/revoke-admin`, `/block`, `/unblock`, `/suspend`, `/unsuspend`,
 `DELETE /users/:id`, `POST /users/invite`, `GET /reports`,
-`POST /reports/:id/resolve`
+`POST /reports/:id/resolve`, `GET /analytics`, `GET /errors`,
+`GET /db/tables`, `GET /db/tables/:name`
 
 ### Notifications — `/api/notifications`
 `GET /`, `POST /:id/read`, `POST /read-all`

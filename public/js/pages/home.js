@@ -17,8 +17,8 @@ export async function renderHome(root) {
       <p>Swiftener is a full-stack blog for long-form writing, thoughtful comments, and clean editorial design.</p>
     </section>
     <form class="filters" id="home-filters">
-      <input type="search" name="q" placeholder="Search posts…" value="${escapeHtml(q.q || '')}" />
-      <input type="text" name="category" placeholder="Category" value="${escapeHtml(q.category || '')}" />
+      <input id="search" type="search" name="q" placeholder="Search posts…" value="${escapeHtml(q.q || '')}" />
+      <input id="categories" type="text" name="category" placeholder="Category" value="${escapeHtml(q.category || '')}" />
       <input type="text" name="tag" placeholder="Tag" value="${escapeHtml(q.tag || '')}" />
       <button type="submit" class="btn btn-primary">Filter</button>
     </form>
@@ -71,4 +71,10 @@ export async function renderHome(root) {
     });
     import('../router.js').then(({ renderCurrent }) => renderCurrent());
   });
+
+  if (window.location.hash === '#search') {
+    root.querySelector('#search')?.focus();
+  } else if (window.location.hash === '#categories') {
+    root.querySelector('#categories')?.focus();
+  }
 }

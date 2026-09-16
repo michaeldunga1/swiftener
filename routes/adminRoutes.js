@@ -19,5 +19,9 @@ router.post('/users/invite', ctrl.inviteUser);
 
 router.get('/reports', ctrl.listPendingReports);
 router.post('/reports/:id/resolve', ctrl.resolveReport);
+router.get('/analytics', ctrl.pageLoadAnalytics);
+router.get('/errors', ctrl.errorAnalytics);
+router.get('/db/tables', ctrl.listTables);
+router.get('/db/tables/:name', ctrl.browseTable);
 
 module.exports = router;

@@ -133,6 +133,55 @@ CREATE TABLE IF NOT EXISTS reports (
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (comment_id, reported_by_id)
 );
+
+CREATE TABLE IF NOT EXISTS page_loads (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  path TEXT NOT NULL,
+  full_url TEXT NOT NULL DEFAULT '',
+  query_string TEXT NOT NULL DEFAULT '',
+  referrer TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  user_agent TEXT NOT NULL DEFAULT '',
+  accept_language TEXT NOT NULL DEFAULT '',
+  language TEXT NOT NULL DEFAULT '',
+  platform TEXT NOT NULL DEFAULT '',
+  screen_width INTEGER,
+  screen_height INTEGER,
+  viewport_width INTEGER,
+  viewport_height INTEGER,
+  timezone TEXT NOT NULL DEFAULT '',
+  country TEXT NOT NULL DEFAULT '',
+  city TEXT NOT NULL DEFAULT '',
+  is_bot INTEGER NOT NULL DEFAULT 0,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_page_loads_created ON page_loads(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_page_loads_path ON page_loads(path);
+CREATE INDEX IF NOT EXISTS idx_page_loads_ip ON page_loads(ip);
+
+CREATE TABLE IF NOT EXISTS error_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source TEXT NOT NULL DEFAULT 'server' CHECK (source IN ('server', 'client')),
+  level TEXT NOT NULL DEFAULT 'error' CHECK (level IN ('error', 'warn', 'info')),
+  message TEXT NOT NULL,
+  stack TEXT NOT NULL DEFAULT '',
+  status_code INTEGER,
+  method TEXT NOT NULL DEFAULT '',
+  path TEXT NOT NULL DEFAULT '',
+  full_url TEXT NOT NULL DEFAULT '',
+  ip TEXT NOT NULL DEFAULT '',
+  user_agent TEXT NOT NULL DEFAULT '',
+  referrer TEXT NOT NULL DEFAULT '',
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  meta TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_error_logs_created ON error_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_error_logs_source ON error_logs(source);
+CREATE INDEX IF NOT EXISTS idx_error_logs_path ON error_logs(path);
 `;
 
 function migrate(database) {
@@ -146,6 +195,43 @@ function migrate(database) {
   database.exec(
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_github_id ON users(github_id) WHERE github_id IS NOT NULL'
   );
+
+  const plCols = database.prepare('PRAGMA table_info(page_loads)').all();
+  const plNames = new Set(plCols.map((c) => c.name));
+  if (!plNames.has('country')) database.exec(`ALTER TABLE page_loads ADD COLUMN country TEXT NOT NULL DEFAULT ''`);
+  if (!plNames.has('city')) database.exec(`ALTER TABLE page_loads ADD COLUMN city TEXT NOT NULL DEFAULT ''`);
+  if (!plNames.has('is_bot')) database.exec(`ALTER TABLE page_loads ADD COLUMN is_bot INTEGER NOT NULL DEFAULT 0`);
+  database.exec('CREATE INDEX IF NOT EXISTS idx_page_loads_country ON page_loads(country)');
+  database.exec('CREATE INDEX IF NOT EXISTS idx_page_loads_is_bot ON page_loads(is_bot)');
+}
+
+function backfillPageLoadGeo(database) {
+  try {
+    const { lookupGeo } = require('../utils/geoip');
+    const { isBotUserAgent } = require('../utils/bot');
+    const rows = database
+      .prepare(
+        `SELECT id, ip, user_agent, timezone, country
+         FROM page_loads
+         WHERE country = '' OR country IS NULL
+         LIMIT 5000`
+      )
+      .all();
+    if (!rows.length) return;
+    const update = database.prepare(
+      `UPDATE page_loads SET country = ?, city = ?, is_bot = ? WHERE id = ?`
+    );
+    const tx = database.transaction((items) => {
+      for (const row of items) {
+        const geo = lookupGeo(row.ip, { timezone: row.timezone });
+        update.run(geo.country, geo.city, isBotUserAgent(row.user_agent) ? 1 : 0, row.id);
+      }
+    });
+    tx(rows);
+    console.log(`[db] Backfilled geo/bot for ${rows.length} page_loads`);
+  } catch (err) {
+    console.warn('[db] Geo backfill skipped:', err.message);
+  }
 }
 
 function connectDB() {
@@ -158,6 +244,7 @@ function connectDB() {
   db.pragma('journal_mode = DELETE');
   db.exec(SCHEMA);
   migrate(db);
+  backfillPageLoadGeo(db);
 
   console.log(`[db] SQLite connected (${dbPath})`);
   return db;

@@ -14,6 +14,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const userRoutes = require('./routes/userRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 connectDB();
 
@@ -39,6 +40,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/newsletter', newsletterRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
