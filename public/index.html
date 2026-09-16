@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Swiftener</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Source+Sans+3:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/css/app.css" />
+  </head>
+  <body>
+    <div class="ambient" aria-hidden="true"></div>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a href="/" class="brand" data-link>Swiftener</a>
+        <nav class="nav-main" id="nav-main"></nav>
+        <div class="header-actions" id="header-actions"></div>
+      </div>
+    </header>
+    <main id="app" class="container main" tabindex="-1"></main>
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>Swiftener — sharpen your ideas in public.</p>
+        <a href="/newsletter" data-link>Newsletter</a>
+      </div>
+    </footer>
+    <div id="toast-root" class="toast-root" aria-live="polite"></div>
+    <script type="module" src="/js/app.js"></script>
+  </body>
+</html>
