@@ -8,6 +8,7 @@ router.get('/', ctrl.listPosts);
 
 // Admin only — must be before /:slug so "admin" is not treated as a slug
 router.get('/admin/drafts', requireAuth, requireAdmin, ctrl.listDrafts);
+router.get('/admin/:id', requireAuth, requireAdmin, ctrl.getAdminPost);
 
 router.get('/:slug', attachUserIfPresent, ctrl.getPostBySlug);
 router.post('/', requireAuth, requireAdmin, ctrl.createPost);

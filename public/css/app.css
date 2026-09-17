@@ -419,10 +419,46 @@ textarea {
   color: var(--signal-dark);
 }
 
+.user-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--signal) 45%, transparent);
+  text-underline-offset: 0.15em;
+  font-weight: 560;
+}
+
+.user-link:hover {
+  color: var(--signal-dark);
+  text-decoration-color: var(--signal);
+}
+
+.user-link.muted {
+  color: var(--ink-soft);
+}
+
+.profile-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3.5vw, 2.4rem);
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.profile-avatar {
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+
 .post-meta {
   font-size: 0.85rem;
   color: var(--ink-soft);
   margin-bottom: 0.65rem;
+}
+
+.article-header-top .post-meta,
+.post-card-top .post-meta {
+  margin-bottom: 0;
+  flex: 1;
 }
 
 .tag {
@@ -471,6 +507,56 @@ textarea {
   font-weight: 400;
   font-size: 0.82rem;
   color: var(--ink-soft);
+}
+
+.article-header-top,
+.post-card-top,
+.comment-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.content-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.icon-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--paper-elevated);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.28rem 0.55rem;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  line-height: 1.2;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.icon-btn:hover {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--signal) 45%, var(--border));
+  background: color-mix(in srgb, var(--signal) 10%, var(--paper-elevated));
+}
+
+.icon-btn-danger:hover {
+  color: #8b1e1e;
+  border-color: color-mix(in srgb, #c44 40%, var(--border));
+  background: color-mix(in srgb, #c44 12%, var(--paper-elevated));
+}
+
+.comment-edit-form {
+  margin-top: 0.5rem;
+  max-width: 100%;
 }
 
 .article-header h1 {

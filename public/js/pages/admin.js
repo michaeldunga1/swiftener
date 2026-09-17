@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { escapeHtml, formatDate, getQuery, toast } from '../ui.js';
+import { escapeHtml, formatDate, getQuery, toast, userLink } from '../ui.js';
 import { navigate } from '../router.js';
 import { getUser } from '../state.js';
 import { loadChartJs, renderChart, seriesFromRows } from '../charts.js';
@@ -103,7 +103,10 @@ export async function renderAdminDrafts(root) {
               (p) => `<tr>
               <td>${escapeHtml(p.title)}</td>
               <td>${formatDate(p.updatedAt)}</td>
-              <td><a href="/admin/posts/edit/${p._id}" data-link class="btn btn-ghost">Edit</a></td>
+              <td class="content-actions" style="white-space:nowrap">
+                <a href="/admin/posts/edit/${p._id}" data-link class="icon-btn" title="Edit draft">Edit</a>
+                <button type="button" class="icon-btn icon-btn-danger" data-delete-draft="${p._id}" title="Delete draft">Delete</button>
+              </td>
             </tr>`
             )
             .join('') || '<tr><td colspan="3" class="muted">No drafts</td></tr>'}
@@ -111,14 +114,31 @@ export async function renderAdminDrafts(root) {
       </table>
     </div>
   `;
+
+  root.querySelectorAll('[data-delete-draft]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!window.confirm('Delete this draft permanently?')) return;
+      try {
+        await api.delete(`/posts/${btn.dataset.deleteDraft}`);
+        toast('Draft deleted');
+        btn.closest('tr')?.remove();
+      } catch (err) {
+        toast(err.message, { error: true });
+      }
+    });
+  });
 }
 
 export async function renderAdminPostEditor(root, { id } = {}) {
   if (!requireAdmin(root)) return;
   let post = null;
   if (id) {
-    const drafts = await api.get('/posts/admin/drafts');
-    post = drafts.posts?.find((p) => String(p._id) === String(id));
+    try {
+      const res = await api.get(`/posts/admin/${id}`);
+      post = res.post;
+    } catch {
+      post = null;
+    }
   }
   const slug = getQuery().slug;
   if (!post && slug) {
@@ -211,8 +231,8 @@ export async function renderAdminUsers(root) {
           ${(data.users || [])
             .map(
               (u) => `<tr data-user-id="${u._id}">
-              <td>${escapeHtml(u.name)}</td>
-              <td>${escapeHtml(u.email)}</td>
+              <td>${userLink(u, u.name)}</td>
+              <td>${userLink(u, u.email)}</td>
               <td>${escapeHtml(u.role)}${u.isBlocked ? ' · blocked' : ''}${u.isSuspended ? ' · suspended' : ''}</td>
               <td>
                 <button type="button" class="btn btn-ghost" data-act="toggle-admin">${u.role === 'admin' ? 'Revoke admin' : 'Make admin'}</button>
@@ -270,9 +290,13 @@ export async function renderAdminReports(root) {
       const body = comment?.body || '';
       return `
       <div class="panel" data-report-id="${r._id}">
-        <p class="muted">${escapeHtml(r.reportedBy?.name || 'User')} · ${formatDate(r.createdAt)}</p>
+        <p class="muted">${userLink(r.reportedBy, r.reportedBy?.name || 'User')} · ${formatDate(r.createdAt)}</p>
         <p><strong>Reason:</strong> ${escapeHtml(r.reason)}</p>
-        <blockquote>${escapeHtml(body)}</blockquote>
+        <blockquote>${
+          comment?.user
+            ? `${userLink(comment.user, comment.user.name || comment.user.email || 'User')}: `
+            : ''
+        }${escapeHtml(body)}</blockquote>
         <button type="button" class="btn btn-danger" data-resolve="hide">Hide comment</button>
         <button type="button" class="btn btn-ghost" data-resolve="dismiss">Dismiss</button>
       </div>`;
@@ -409,7 +433,10 @@ export async function renderAdminAnalytics(root) {
         <tbody>
           ${(data.loads || [])
             .map((row) => {
-              const userLabel = row.user?.email || row.user?.name || '—';
+              const userCell =
+                row.user && typeof row.user === 'object' && row.user._id
+                  ? userLink(row.user, row.user.email || row.user.name)
+                  : escapeHtml(row.user?.email || row.user?.name || '—');
               const screen =
                 row.screenWidth && row.screenHeight ? `${row.screenWidth}×${row.screenHeight}` : '';
               const clientBits = [row.platform, row.language, row.timezone, screen].filter(Boolean).join(' · ');
@@ -420,7 +447,7 @@ export async function renderAdminAnalytics(root) {
                 <td><code>${escapeHtml(row.path)}</code>${row.queryString ? `<br><span class="muted">${escapeHtml(row.queryString)}</span>` : ''}</td>
                 <td>${escapeHtml(place)}${botBadge}</td>
                 <td><code>${escapeHtml(row.ip)}</code></td>
-                <td>${escapeHtml(userLabel)}</td>
+                <td>${userCell}</td>
                 <td class="muted" style="max-width:280px;font-size:0.8rem">
                   ${escapeHtml(clientBits)}
                   ${row.userAgent ? `<details><summary class="muted">user-agent</summary><pre style="white-space:pre-wrap;font-size:0.75rem;max-height:120px;overflow:auto">${escapeHtml(row.userAgent)}</pre></details>` : ''}
@@ -558,7 +585,10 @@ export async function renderAdminErrors(root) {
         <tbody>
           ${(data.errors || [])
             .map((row) => {
-              const userLabel = row.user?.email || row.user?.name || '—';
+              const userCell =
+                row.user && typeof row.user === 'object' && row.user._id
+                  ? userLink(row.user, row.user.email || row.user.name)
+                  : escapeHtml(row.user?.email || row.user?.name || '—');
               return `<tr>
                 <td>${escapeHtml(row.createdAt ? new Date(row.createdAt).toLocaleString() : '')}</td>
                 <td>${escapeHtml(row.source)}</td>
@@ -568,7 +598,7 @@ export async function renderAdminErrors(root) {
                   ${row.stack ? `<details><summary class="muted">stack</summary><pre style="white-space:pre-wrap;font-size:0.75rem;max-height:160px;overflow:auto">${escapeHtml(row.stack.slice(0, 2000))}</pre></details>` : ''}
                 </td>
                 <td><code>${escapeHtml(row.method || '')} ${escapeHtml(row.path || '')}</code></td>
-                <td><code>${escapeHtml(row.ip || '')}</code><br><span class="muted">${escapeHtml(userLabel)}</span></td>
+                <td><code>${escapeHtml(row.ip || '')}</code><br><span class="muted">${userCell}</span></td>
               </tr>`;
             })
             .join('') || '<tr><td colspan="6" class="muted">No errors logged yet.</td></tr>'}

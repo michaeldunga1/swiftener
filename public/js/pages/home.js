@@ -1,5 +1,6 @@
 import { api } from '../api.js';
-import { escapeHtml, formatDate, getQuery, setQuery } from '../ui.js';
+import { escapeHtml, formatDate, getQuery, setQuery, toast, userLink } from '../ui.js';
+import { getUser } from '../state.js';
 
 export async function renderHome(root) {
   const q = getQuery();
@@ -10,6 +11,7 @@ export async function renderHome(root) {
   if (q.page) params.set('page', q.page);
   const qs = params.toString();
   const data = await api.get(`/posts${qs ? `?${qs}` : ''}`);
+  const isAdmin = getUser()?.role === 'admin';
 
   root.innerHTML = `
     <section class="hero">
@@ -32,13 +34,23 @@ export async function renderHome(root) {
   } else {
     grid.innerHTML = data.posts
       .map((post, i) => {
-        const author = post.author?.name || 'Author';
+        const authorLabel = post.author?.name || 'Author';
         const tags = (post.tags || [])
           .map((t) => `<span class="tag">${escapeHtml(t)}</span>`)
           .join('');
         return `
-          <article class="post-card" style="--i:${i}">
-            <p class="post-meta">${escapeHtml(post.category)} · ${formatDate(post.publishedAt)} · ${escapeHtml(author)}</p>
+          <article class="post-card" style="--i:${i}" data-post-id="${post._id}">
+            <div class="post-card-top">
+              <p class="post-meta">${escapeHtml(post.category)} · ${formatDate(post.publishedAt)} · ${userLink(post.author, authorLabel)}</p>
+              ${
+                isAdmin
+                  ? `<div class="content-actions">
+                      <a href="/admin/posts/edit/${post._id}" data-link class="icon-btn" title="Edit post">Edit</a>
+                      <button type="button" class="icon-btn icon-btn-danger" data-delete-post="${post._id}" title="Delete post">Delete</button>
+                    </div>`
+                  : ''
+              }
+            </div>
             <h2><a href="/posts/${escapeHtml(post.slug)}" data-link>${escapeHtml(post.title)}</a></h2>
             <p>${escapeHtml(post.excerpt || '')}</p>
             <div>${tags}</div>
@@ -46,6 +58,26 @@ export async function renderHome(root) {
         `;
       })
       .join('');
+
+    if (isAdmin) {
+      grid.querySelectorAll('[data-delete-post]').forEach((btn) => {
+        btn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!window.confirm('Delete this post permanently?')) return;
+          try {
+            await api.delete(`/posts/${btn.dataset.deletePost}`);
+            toast('Post deleted');
+            btn.closest('.post-card')?.remove();
+            if (!grid.querySelector('.post-card')) {
+              grid.innerHTML = '<p class="empty">No published posts yet.</p>';
+            }
+          } catch (err) {
+            toast(err.message, { error: true });
+          }
+        });
+      });
+    }
   }
 
   const pag = root.querySelector('#pagination');

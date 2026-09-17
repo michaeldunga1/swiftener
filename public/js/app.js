@@ -1,7 +1,7 @@
 import { route, initRouter, renderCurrent, navigate, setAfterRender } from './router.js';
 import { refreshUser, clearUser, getUser } from './state.js';
 import { api } from './api.js';
-import { toast } from './ui.js';
+import { toast, escapeHtml } from './ui.js';
 import { renderHome } from './pages/home.js';
 import { renderPost } from './pages/post.js';
 import {
@@ -15,6 +15,7 @@ import {
   renderProfile,
   renderProfileList,
   renderNotifications,
+  renderPublicProfile,
 } from './pages/profile.js';
 import {
   renderAdminDashboard,
@@ -52,7 +53,7 @@ function renderNav() {
 
   if (user) {
     actions.innerHTML = `
-      <span class="muted" style="font-size:0.9rem">${user.name}</span>
+      <a href="/users/${user._id}" data-link class="user-link muted" style="font-size:0.9rem">${escapeHtml(user.name)}</a>
       <button type="button" class="btn btn-ghost" id="logout-btn">Log out</button>
     `;
     actions.querySelector('#logout-btn').addEventListener('click', async () => {
@@ -107,6 +108,7 @@ route(/^\/profile\/saved$/, (root) => renderProfileList(root, 'save', 'profile/s
 route(/^\/profile\/liked$/, (root) => renderProfileList(root, 'like', 'profile/liked'));
 route(/^\/profile\/bookmarked$/, (root) => renderProfileList(root, 'bookmark', 'profile/bookmarked'));
 route(/^\/profile\/notifications$/, renderNotifications);
+route(/^\/users\/(?<id>\d+)$/, (root, params) => renderPublicProfile(root, params));
 route(/^\/newsletter$/, renderNewsletter);
 route(/^\/newsletter\/verify$/, renderNewsletterVerify);
 route(/^\/newsletter\/unsubscribe$/, renderNewsletterUnsubscribe);

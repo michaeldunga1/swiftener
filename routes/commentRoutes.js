@@ -5,6 +5,7 @@ const { requireAuth, requireActiveForEngagement } = require('../middleware/auth'
 
 router.get('/:postId', ctrl.listComments); // public read
 router.post('/:postId', requireAuth, requireActiveForEngagement, ctrl.createComment);
+router.put('/:id', requireAuth, requireActiveForEngagement, ctrl.updateComment);
 router.delete('/:id', requireAuth, ctrl.deleteComment);
 router.post('/:id/report', requireAuth, requireActiveForEngagement, ctrl.reportComment);
 

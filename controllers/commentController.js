@@ -69,6 +69,26 @@ async function deleteComment(req, res, next) {
   }
 }
 
+async function updateComment(req, res, next) {
+  try {
+    const comment = Comment.findById(req.params.id);
+    if (!comment || comment.isDeleted) return res.status(404).json({ error: 'Comment not found' });
+
+    const isOwner = String(comment.user) === String(req.user._id);
+    if (!isOwner && req.user.role !== 'admin') return res.status(403).json({ error: 'Not allowed' });
+
+    const body = String(req.body?.body || '').trim();
+    if (!body) return res.status(400).json({ error: 'Comment body is required' });
+    if (body.length > 2000) return res.status(400).json({ error: 'Comment is too long' });
+
+    Comment.update(comment._id, { body });
+    const updated = Comment.findByIdWithUser(comment._id);
+    res.json({ comment: updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function reportComment(req, res, next) {
   try {
     const { reason } = req.body;
@@ -98,4 +118,4 @@ async function reportComment(req, res, next) {
   }
 }
 
-module.exports = { createComment, listComments, deleteComment, reportComment };
+module.exports = { createComment, listComments, deleteComment, updateComment, reportComment };

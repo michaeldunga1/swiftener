@@ -127,4 +127,14 @@ async function getPostBySlug(req, res, next) {
   }
 }
 
-module.exports = { createPost, updatePost, deletePost, listPosts, listDrafts, getPostBySlug };
+async function getAdminPost(req, res, next) {
+  try {
+    const post = Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    res.json({ post });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { createPost, updatePost, deletePost, listPosts, listDrafts, getPostBySlug, getAdminPost };

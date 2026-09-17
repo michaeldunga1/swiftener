@@ -6,6 +6,19 @@ export function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+/** Link a name, username, or email to `/users/:id`. Falls back to plain text if no id. */
+export function userLink(user, label) {
+  const id = user != null && typeof user === 'object' ? user._id : user;
+  const text =
+    label != null
+      ? label
+      : user != null && typeof user === 'object'
+        ? user.name || user.email || 'User'
+        : 'User';
+  if (id == null || id === '') return escapeHtml(text);
+  return `<a href="/users/${encodeURIComponent(id)}" data-link class="user-link">${escapeHtml(text)}</a>`;
+}
+
 export function formatDate(value) {
   if (!value) return '';
   const d = new Date(value);

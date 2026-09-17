@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { escapeHtml, formatDate, toast, passwordInput, initPasswordToggles } from '../ui.js';
+import { escapeHtml, formatDate, toast, passwordInput, initPasswordToggles, userLink } from '../ui.js';
 import { navigate } from '../router.js';
 import { getUser, refreshUser } from '../state.js';
 
@@ -22,14 +22,43 @@ function requireLogin(root) {
   return false;
 }
 
+export async function renderPublicProfile(root, { id }) {
+  let data;
+  try {
+    data = await api.get(`/users/${encodeURIComponent(id)}`);
+  } catch (err) {
+    root.innerHTML = `<div class="panel"><p>${escapeHtml(err.message || 'User not found')}</p></div>`;
+    return;
+  }
+  const profile = data.user;
+  const me = getUser();
+  const isSelf = me && String(me._id) === String(profile._id);
+
+  root.innerHTML = `
+    <div class="panel">
+      <p class="muted" style="margin:0 0 0.35rem">Profile</p>
+      <h1 class="profile-name">${escapeHtml(profile.name || 'User')}</h1>
+      ${profile.bio ? `<p>${escapeHtml(profile.bio)}</p>` : '<p class="muted">No bio yet.</p>'}
+      <p class="muted">Member since ${formatDate(profile.createdAt)}</p>
+      ${
+        profile.avatar
+          ? `<p style="margin-top:1rem"><img src="${escapeHtml(profile.avatar)}" alt="" class="profile-avatar" width="96" height="96" /></p>`
+          : ''
+      }
+      ${isSelf ? `<p style="margin-top:1.25rem"><a href="/profile" data-link class="btn btn-primary">Edit your profile</a></p>` : ''}
+    </div>
+  `;
+}
+
 export async function renderProfile(root) {
   if (!requireLogin(root)) return;
   const user = getUser();
   root.innerHTML = `
     ${profileTabs('profile')}
     <div class="panel">
-      <h2>${escapeHtml(user.name)}</h2>
-      <p class="muted">${escapeHtml(user.email)} · ${user.role}</p>
+      <h2>${userLink(user, user.name)}</h2>
+      <p class="muted">${userLink(user, user.email)} · ${user.role}</p>
+      <p class="muted"><a href="/users/${user._id}" data-link>View public profile</a></p>
       <form id="profile-form" class="form-stack" style="max-width:100%;margin-top:1rem">
         <label>Name<input name="name" value="${escapeHtml(user.name)}" required /></label>
         <label>Bio<textarea name="bio" maxlength="500">${escapeHtml(user.bio || '')}</textarea></label>
