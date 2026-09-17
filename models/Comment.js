@@ -101,6 +101,10 @@ const Comment = {
       : 'SELECT COUNT(*) AS c FROM comments';
     return getDb().prepare(sql).get(...params).c;
   },
+
+  deleteByPost(postId) {
+    return getDb().prepare('DELETE FROM comments WHERE post_id = ?').run(postId).changes;
+  },
 };
 
 module.exports = Comment;

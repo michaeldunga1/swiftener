@@ -1,4 +1,5 @@
 const { getDb, now, toIso, mapPost } = require('./_helpers');
+const Comment = require('./Comment');
 
 function authorSnippet(row) {
   if (row.author_name == null) return row.author_id;
@@ -131,7 +132,13 @@ const Post = {
   delete(id) {
     const post = this.findById(id);
     if (!post) return null;
-    getDb().prepare('DELETE FROM posts WHERE id = ?').run(id);
+    const db = getDb();
+    // comments.post_id has no ON DELETE CASCADE — remove dependents first.
+    // reports cascade from comments; interactions/views/notifications cascade or SET NULL from posts.
+    db.transaction(() => {
+      Comment.deleteByPost(id);
+      db.prepare('DELETE FROM posts WHERE id = ?').run(id);
+    })();
     return post;
   },
 
