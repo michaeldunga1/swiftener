@@ -5,16 +5,19 @@ function signToken(userId) {
 }
 
 function setAuthCookie(res, token) {
-  res.cookie(process.env.COOKIE_NAME, token, {
+  const secure = process.env.NODE_ENV === 'production';
+  res.cookie(process.env.COOKIE_NAME || 'sw_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure,
     sameSite: 'lax',
+    path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }
 
 function clearAuthCookie(res) {
-  res.clearCookie(process.env.COOKIE_NAME);
+  const name = process.env.COOKIE_NAME || 'sw_token';
+  res.clearCookie(name, { path: '/', httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' });
 }
 
 module.exports = { signToken, setAuthCookie, clearAuthCookie };

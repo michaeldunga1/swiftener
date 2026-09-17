@@ -1,6 +1,7 @@
 import { api, ApiError } from '../api.js';
 import { escapeHtml, formatDate, toast } from '../ui.js';
 import { getUser } from '../state.js';
+import { htmlForPostBody } from '../markdown.js';
 
 export async function renderPost(root, { slug }) {
   const data = await api.get(`/posts/${encodeURIComponent(slug)}`);
@@ -22,7 +23,7 @@ export async function renderPost(root, { slug }) {
           <button type="button" class="btn btn-ghost" data-action="share">Share</button>
         </div>
       </header>
-      <div class="panel article-body">${post.renderedBody || escapeHtml(post.body)}</div>
+      <div class="panel article-body" id="article-body"><p class="muted">Loading…</p></div>
       <section class="comments panel">
         <h2>Comments</h2>
         <div id="comment-list"></div>
@@ -39,6 +40,13 @@ export async function renderPost(root, { slug }) {
       </section>
     </article>
   `;
+
+  const bodyEl = root.querySelector('#article-body');
+  try {
+    bodyEl.innerHTML = await htmlForPostBody(post);
+  } catch {
+    bodyEl.textContent = post.body || '';
+  }
 
   api.post(`/posts/${post._id}/view`).catch(() => {});
 
@@ -68,6 +76,10 @@ export async function renderPost(root, { slug }) {
       btn.classList.toggle('active', res.active);
       toast(res.active ? `${action} added` : `${action} removed`);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        toast('Session expired — please log in again', { error: true });
+        return;
+      }
       toast(err.message, { error: true });
     }
   });

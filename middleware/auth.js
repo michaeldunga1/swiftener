@@ -3,8 +3,9 @@ const User = require('../models/User');
 
 async function requireAuth(req, res, next) {
   try {
+    const cookieName = process.env.COOKIE_NAME || 'sw_token';
     const token =
-      req.cookies?.[process.env.COOKIE_NAME] ||
+      req.cookies?.[cookieName] ||
       (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null);
 
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
@@ -23,8 +24,9 @@ async function requireAuth(req, res, next) {
 
 async function attachUserIfPresent(req, res, next) {
   try {
+    const cookieName = process.env.COOKIE_NAME || 'sw_token';
     const token =
-      req.cookies?.[process.env.COOKIE_NAME] ||
+      req.cookies?.[cookieName] ||
       (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null);
     if (!token) return next();
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

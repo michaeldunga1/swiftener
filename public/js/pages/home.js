@@ -13,8 +13,8 @@ export async function renderHome(root) {
 
   root.innerHTML = `
     <section class="hero">
-      <h1>Ideas, sharpened.</h1>
-      <p>Swiftener is a full-stack blog for long-form writing, thoughtful comments, and clean editorial design.</p>
+      <h1 class="hero-brand">Swiftener</h1>
+      <p class="hero-lead">Ideas, sharpened — long-form writing, thoughtful comments, and clean editorial design.</p>
     </section>
     <form class="filters" id="home-filters">
       <input id="search" type="search" name="q" placeholder="Search posts…" value="${escapeHtml(q.q || '')}" />
@@ -31,13 +31,13 @@ export async function renderHome(root) {
     grid.innerHTML = '<p class="empty">No published posts yet.</p>';
   } else {
     grid.innerHTML = data.posts
-      .map((post) => {
+      .map((post, i) => {
         const author = post.author?.name || 'Author';
         const tags = (post.tags || [])
           .map((t) => `<span class="tag">${escapeHtml(t)}</span>`)
           .join('');
         return `
-          <article class="post-card">
+          <article class="post-card" style="--i:${i}">
             <p class="post-meta">${escapeHtml(post.category)} · ${formatDate(post.publishedAt)} · ${escapeHtml(author)}</p>
             <h2><a href="/posts/${escapeHtml(post.slug)}" data-link>${escapeHtml(post.title)}</a></h2>
             <p>${escapeHtml(post.excerpt || '')}</p>

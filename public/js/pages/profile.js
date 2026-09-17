@@ -45,6 +45,15 @@ export async function renderProfile(root) {
         <button type="submit" class="btn btn-ghost">Update password</button>
       </form>
     </div>
+    <div class="panel">
+      <h3>Newsletter</h3>
+      <p class="muted">Get occasional Swiftener updates by email.</p>
+      <form id="profile-newsletter-form" class="form-stack">
+        <label>Email<input type="email" name="email" value="${escapeHtml(user.email || '')}" required /></label>
+        <button type="submit" class="btn btn-primary">Subscribe</button>
+      </form>
+      <p class="muted" style="margin-top:0.75rem"><a href="/newsletter" data-link>Open newsletter page</a></p>
+    </div>
   `;
 
   initPasswordToggles(root);
@@ -75,6 +84,17 @@ export async function renderProfile(root) {
       });
       e.target.reset();
       toast('Password updated');
+    } catch (err) {
+      toast(err.message, { error: true });
+    }
+  });
+
+  root.querySelector('#profile-newsletter-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = new FormData(e.target).get('email');
+    try {
+      await api.post('/newsletter/subscribe', { email });
+      toast('Check your inbox to confirm');
     } catch (err) {
       toast(err.message, { error: true });
     }

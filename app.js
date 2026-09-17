@@ -48,7 +48,7 @@ app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
+  if (req.path.startsWith('/api') || req.path.startsWith('/auth/')) return next();
   res.sendFile(path.join(publicDir, 'index.html'));
 });
 
