@@ -92,6 +92,11 @@ export function formatDate(value) {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+/** Join meta fragments with · separators, skipping empty ones. */
+export function metaLine(...parts) {
+  return parts.filter(Boolean).join('<span class="meta-sep" aria-hidden="true">·</span>');
+}
+
 export function toast(message, { error = false } = {}) {
   const root = document.getElementById('toast-root');
   if (!root) return;

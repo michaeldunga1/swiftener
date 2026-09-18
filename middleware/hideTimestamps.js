@@ -5,6 +5,8 @@ const TIMESTAMP_KEYS = new Set([
   'updatedAt',
   'created_at',
   'updated_at',
+  'publishedAt',
+  'published_at',
   'memberSince',
 ]);
 

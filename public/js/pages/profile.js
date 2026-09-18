@@ -165,6 +165,7 @@ export async function renderProfileList(root, type, tabKey) {
   if (!requireLogin(root)) return;
   setNoIndex(tabKey);
   const data = await api.get(`/users/me/${type}`);
+  const isAdmin = getUser()?.role === 'admin';
   root.innerHTML = `
     ${profileTabs(tabKey)}
     <div class="card-grid">
@@ -175,7 +176,7 @@ export async function renderProfileList(root, type, tabKey) {
                 (p) => `
         <article class="post-card">
           <h2><a href="${postPath(p)}" data-link>${escapeHtml(p.title)}</a></h2>
-          <p class="post-meta">${formatDate(p.publishedAt)}</p>
+          ${isAdmin && p.publishedAt ? `<p class="post-meta">${formatDate(p.publishedAt)}</p>` : ''}
         </article>`
               )
               .join('')

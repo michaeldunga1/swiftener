@@ -92,6 +92,14 @@ export function loadAdSense() {
   const client = window.__SWIFTENER__?.adsenseClient;
   if (!client || adsenseLoaded) return;
   if (!/^ca-pub-\d+$/.test(client)) return;
+  // Consent gate — callers should check, but enforce here too.
+  try {
+    const raw = localStorage.getItem('sw_consent_v1');
+    const consent = raw ? JSON.parse(raw) : null;
+    if (!consent || consent.ads !== true) return;
+  } catch {
+    return;
+  }
   adsenseLoaded = true;
 
   upsertMeta('name', 'google-adsense-account', client);

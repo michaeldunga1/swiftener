@@ -9,6 +9,7 @@ import {
   tagSlug,
   absoluteShareUrl,
   renderShareButtons,
+  metaLine,
 } from '../ui.js';
 import { getUser } from '../state.js';
 import { htmlForPostBody } from '../markdown.js';
@@ -179,22 +180,29 @@ export async function renderPost(root, { slug, tag } = {}) {
       headline: post.title,
       description,
       image: post.coverImage || undefined,
-      datePublished: post.publishedAt,
-      dateModified: post.updatedAt || post.publishedAt,
+      datePublished: isAdmin ? post.publishedAt : undefined,
+      dateModified: isAdmin ? post.updatedAt || post.publishedAt : undefined,
       author: { '@type': 'Person', name: authorLabel },
       mainEntityOfPage: canonical,
     },
   });
+
+  const dateHtml =
+    isAdmin && post.publishedAt
+      ? `<time datetime="${escapeHtml(post.publishedAt)}">${formatDate(post.publishedAt)}</time>`
+      : '';
 
   root.innerHTML = `
     <article class="post-layout" id="post-article" itemscope itemtype="https://schema.org/BlogPosting">
       <header class="article-header panel">
         <div class="article-header-top">
           <p class="post-meta">
-            <span>${escapeHtml(post.category)}</span><span class="meta-sep" aria-hidden="true">·</span>
-            <time datetime="${escapeHtml(post.publishedAt || '')}">${formatDate(post.publishedAt)}</time><span class="meta-sep" aria-hidden="true">·</span>
-            ${userLink(post.author, authorLabel)}<span class="meta-sep" aria-hidden="true">·</span>
-            <span>${reading.minutes} min read</span>
+            ${metaLine(
+              post.category ? `<span>${escapeHtml(post.category)}</span>` : '',
+              dateHtml,
+              userLink(post.author, authorLabel),
+              `<span>${reading.minutes} min read</span>`
+            )}
           </p>
           ${
             isAdmin

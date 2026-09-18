@@ -8,8 +8,10 @@ import {
   postPath,
   renderTagLinks,
   highlightMatch,
+  metaLine,
 } from '../ui.js';
 import { setPageSeo } from '../seo.js';
+import { getUser } from '../state.js';
 
 function chip(label, href, active, extraClass = '') {
   const cls = `filter-chip${active ? ' active' : ''}${extraClass ? ` ${extraClass}` : ''}`;
@@ -99,6 +101,7 @@ export async function renderHome(root) {
     <div class="pagination" id="pagination"></div>
   `;
 
+  const isAdmin = getUser()?.role === 'admin';
   const grid = root.querySelector('#post-grid');
   if (!data.posts?.length) {
     grid.innerHTML = `
@@ -116,6 +119,10 @@ export async function renderHome(root) {
         const authorLabel = post.author?.name || 'Author';
         const title = q.q ? highlightMatch(post.title, q.q) : escapeHtml(post.title);
         const excerpt = q.q ? highlightMatch(post.excerpt || '', q.q) : escapeHtml(post.excerpt || '');
+        const dateHtml =
+          isAdmin && post.publishedAt
+            ? `<time datetime="${escapeHtml(post.publishedAt)}">${formatDate(post.publishedAt)}</time>`
+            : '';
         return `
           <article class="post-card" style="--i:${i}" data-post-id="${post._id}">
             ${
@@ -123,7 +130,11 @@ export async function renderHome(root) {
                 ? `<a href="${postPath(post)}" data-link class="post-card-cover"><img src="${escapeHtml(post.coverImage)}" alt="" loading="lazy" /></a>`
                 : ''
             }
-            <p class="post-meta"><span>${escapeHtml(post.category)}</span><span class="meta-sep" aria-hidden="true">·</span><time datetime="${escapeHtml(post.publishedAt || '')}">${formatDate(post.publishedAt)}</time><span class="meta-sep" aria-hidden="true">·</span>${userLink(post.author, authorLabel)}</p>
+            <p class="post-meta">${metaLine(
+              post.category ? `<span>${escapeHtml(post.category)}</span>` : '',
+              dateHtml,
+              userLink(post.author, authorLabel)
+            )}</p>
             <h2><a href="${postPath(post)}" data-link>${title}</a></h2>
             <p class="post-card-excerpt">${excerpt}</p>
             <div class="tag-row">${renderTagLinks(post.tags)}</div>

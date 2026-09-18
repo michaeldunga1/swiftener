@@ -3,6 +3,7 @@ import { refreshUser, clearUser, getUser } from './state.js';
 import { api } from './api.js';
 import { setPageSeo, loadAdSense } from './seo.js';
 import { escapeHtml, toast, userPath } from './ui.js';
+import { initConsent, hasAdsConsent, hasAnalyticsConsent, openConsentSettings } from './consent.js';
 import { renderHome } from './pages/home.js';
 import { renderPost } from './pages/post.js';
 import {
@@ -145,6 +146,17 @@ function renderFooter() {
   nav.innerHTML = links
     .map(([href, label]) => `<a href="${href}" data-link>${label}</a>`)
     .join('');
+
+  const legal = document.querySelector('.footer-nav-legal');
+  if (legal && !legal.querySelector('[data-consent-settings]')) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'footer-consent-btn';
+    btn.dataset.consentSettings = '1';
+    btn.textContent = 'Cookie settings';
+    btn.addEventListener('click', () => openConsentSettings());
+    legal.appendChild(btn);
+  }
 }
 
 route(/^\/$/, renderHome);
@@ -203,7 +215,8 @@ function trackPageLoad() {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
     userAgent: navigator.userAgent || '',
   };
-  // Fire-and-forget; do not block navigation
+  // Fire-and-forget; do not block navigation. Requires analytics consent.
+  if (!hasAnalyticsConsent()) return;
   api.post('/analytics/pageview', payload).catch(() => {});
 }
 
@@ -241,12 +254,13 @@ function initClientErrorLogging() {
 async function boot() {
   initClientErrorLogging();
   initHeaderChrome();
+  initConsent();
   setAfterRender(() => {
     closeMobileNav();
     renderNav();
     renderFooter();
     trackPageLoad();
-    loadAdSense();
+    if (hasAdsConsent()) loadAdSense();
   });
   initRouter();
   try {
