@@ -1,13 +1,13 @@
 :root {
-  --ink: #1c1915;
-  --ink-soft: #5c564c;
-  --paper: #f3eee4;
-  --paper-elevated: #faf7f1;
+  --ink: #1a211f;
+  --ink-soft: #5a6460;
+  --paper: #e6ebe8;
+  --paper-elevated: #f3f6f4;
   --signal: #0d9488;
   --signal-dark: #0f766e;
   --signal-soft: color-mix(in srgb, var(--signal) 12%, transparent);
-  --border: rgba(28, 25, 21, 0.1);
-  --shadow: 0 14px 36px rgba(28, 25, 21, 0.05);
+  --border: rgba(26, 33, 31, 0.1);
+  --shadow: 0 14px 36px rgba(26, 33, 31, 0.05);
   --radius: 10px;
   --radius-sm: 8px;
   --font-display: "Fraunces", Georgia, serif;
@@ -16,8 +16,8 @@
   --touch: 2.75rem;
   --header-blur: color-mix(in srgb, var(--paper) 88%, transparent);
   --measure: 42rem;
-  --mist: #e8dfd0;
-  --sky-wash: #ebe4d6;
+  --mist: #d2dbd6;
+  --sky-wash: #d8e0dc;
 }
 
 *,
@@ -49,15 +49,15 @@ body {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 90% 60% at 12% -5%, color-mix(in srgb, var(--signal) 12%, transparent), transparent 62%),
-    radial-gradient(ellipse 70% 55% at 94% 6%, color-mix(in srgb, #f0e6d4 85%, transparent), transparent 58%),
-    radial-gradient(ellipse 55% 45% at 68% 90%, color-mix(in srgb, var(--mist) 75%, transparent), transparent 60%),
-    radial-gradient(ellipse 40% 35% at 20% 78%, color-mix(in srgb, var(--signal) 6%, transparent), transparent 70%),
+    radial-gradient(ellipse 90% 60% at 10% -6%, color-mix(in srgb, var(--signal) 11%, transparent), transparent 64%),
+    radial-gradient(ellipse 72% 52% at 96% 4%, color-mix(in srgb, #cfd8d3 70%, transparent), transparent 58%),
+    radial-gradient(ellipse 58% 48% at 72% 92%, color-mix(in srgb, var(--mist) 80%, transparent), transparent 62%),
+    radial-gradient(ellipse 42% 36% at 18% 80%, color-mix(in srgb, var(--signal) 5%, transparent), transparent 72%),
     linear-gradient(
-      165deg,
-      color-mix(in srgb, var(--mist) 50%, var(--paper)) 0%,
-      var(--paper) 40%,
-      color-mix(in srgb, var(--sky-wash) 45%, var(--paper)) 78%,
+      168deg,
+      color-mix(in srgb, var(--mist) 45%, var(--paper)) 0%,
+      var(--paper) 42%,
+      color-mix(in srgb, var(--sky-wash) 50%, var(--paper)) 76%,
       var(--paper) 100%
     );
   z-index: -1;
