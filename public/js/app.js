@@ -83,13 +83,9 @@ function renderFooter() {
   const links = [
     ['/', 'Home'],
     ['/#search', 'Search'],
-    ['/newsletter', 'Resources'],
+    ['/newsletter', 'Newsletter'],
     ['/#categories', 'Categories'],
     user ? ['/profile/saved', 'Saved'] : ['/login', 'Log in'],
-    ['/about', 'About'],
-    ['/contact', 'Contact'],
-    ['/privacy', 'Privacy Policy'],
-    ['/terms', 'Terms of Use'],
   ];
 
   nav.innerHTML = links

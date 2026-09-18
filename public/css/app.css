@@ -137,6 +137,19 @@ body {
   gap: 1.25rem;
 }
 
+.footer-columns {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 720px) {
+  .footer-columns {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+}
+
 .footer-tagline {
   margin: 0;
   max-width: 36rem;
@@ -150,6 +163,11 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem 1.15rem;
+}
+
+.footer-nav-legal a {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .footer-nav a {
