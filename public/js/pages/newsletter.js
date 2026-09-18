@@ -5,7 +5,7 @@ export async function renderNewsletter(root) {
   root.innerHTML = `
     <div class="panel" style="max-width:520px;margin-inline:auto">
       <h2>Swiftener newsletter</h2>
-      <p class="muted">Occasional updates — no noise. Confirm via email after subscribing.</p>
+      <p class="muted">Occasional new cheat sheets and guide updates — no noise. Confirm via email after subscribing.</p>
       <form id="newsletter-form" class="form-stack">
         <label>Email<input type="email" name="email" required /></label>
         <button type="submit" class="btn btn-primary">Subscribe</button>

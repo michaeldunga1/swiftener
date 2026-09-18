@@ -29,12 +29,12 @@ export async function renderHome(root) {
     api.get('/posts/meta/facets').catch(() => ({ categories: [], tags: [] })),
   ]);
 
-  const descParts = ['Long-form writing and thoughtful discussion on Swiftener.'];
+  const descParts = ['Practical cheat sheets for coding, terminals, and Microsoft Office.'];
   if (q.q) descParts.unshift(`Search results for “${q.q}”.`);
-  if (q.category) descParts.unshift(`Posts in ${q.category}.`);
-  if (q.tag) descParts.unshift(`Posts tagged ${q.tag}.`);
+  if (q.category) descParts.unshift(`Cheat sheets in ${q.category}.`);
+  if (q.tag) descParts.unshift(`Guides tagged ${q.tag}.`);
   setPageSeo({
-    title: q.q ? `Search: ${q.q}` : q.tag ? `#${q.tag}` : q.category ? q.category : 'Swiftener — ideas, sharpened',
+    title: q.q ? `Search: ${q.q}` : q.tag ? `#${q.tag}` : q.category ? q.category : 'Swiftener — practical cheat sheets',
     description: descParts.join(' '),
     path: window.location.pathname + window.location.search,
     jsonLd: {
@@ -66,7 +66,7 @@ export async function renderHome(root) {
   root.innerHTML = `
     <section class="hero">
       <h1 class="hero-brand">Swiftener</h1>
-      <p class="hero-lead">Ideas, sharpened — long-form writing, thoughtful comments, and clean editorial design.</p>
+      <p class="hero-lead">Practical cheat sheets for coding, terminals, and Microsoft Office — quick reference when you need it.</p>
     </section>
     <form class="filters" id="home-filters">
       <input id="search" type="search" name="q" placeholder="Search posts…" value="${escapeHtml(q.q || '')}" />

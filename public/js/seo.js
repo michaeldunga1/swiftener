@@ -1,5 +1,5 @@
 const DEFAULT_DESCRIPTION =
-  'Long-form writing, thoughtful comments, and clean editorial design on Swiftener.';
+  'Practical cheat sheets for coding, terminals, and Microsoft Office.';
 
 function upsertMeta(attr, key, content) {
   if (content == null || content === '') return;

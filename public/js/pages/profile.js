@@ -93,7 +93,7 @@ export async function renderProfile(root) {
     </div>
     <div class="panel">
       <h3>Newsletter</h3>
-      <p class="muted">Get occasional Swiftener updates by email.</p>
+      <p class="muted">Get occasional new cheat sheets and guide updates by email.</p>
       <form id="profile-newsletter-form" class="form-stack">
         <label>Email<input type="email" name="email" value="${escapeHtml(user.email || '')}" required /></label>
         <button type="submit" class="btn btn-primary">Subscribe</button>
