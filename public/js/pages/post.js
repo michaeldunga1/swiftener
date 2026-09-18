@@ -7,6 +7,8 @@ import {
   postPath,
   renderTagLinks,
   tagSlug,
+  absoluteShareUrl,
+  renderShareButtons,
 } from '../ui.js';
 import { getUser } from '../state.js';
 import { htmlForPostBody } from '../markdown.js';
@@ -211,14 +213,23 @@ export async function renderPost(root, { slug, tag } = {}) {
           <button type="button" class="btn btn-ghost ${viewer.liked ? 'active' : ''}" data-action="like">Like</button>
           <button type="button" class="btn btn-ghost ${viewer.saved ? 'active' : ''}" data-action="save">Save</button>
           <button type="button" class="btn btn-ghost ${viewer.bookmarked ? 'active' : ''}" data-action="bookmark">Bookmark</button>
-          <button type="button" class="btn btn-ghost" data-action="share">Share</button>
         </div>
+        ${renderShareButtons({
+          url: absoluteShareUrl(canonical),
+          title: post.title,
+          className: 'share-row-article',
+        })}
       </header>
       <div class="post-main">
         ${buildTocHtml(toc)}
         <div class="panel article-body" id="article-body" itemprop="articleBody"><p class="muted">Loading…</p></div>
       </div>
       ${relatedHtml(related)}
+      ${renderShareButtons({
+        url: absoluteShareUrl(canonical),
+        title: post.title,
+        className: 'share-row-footer panel',
+      })}
       <section class="comments panel">
         <h2>Comments</h2>
         <div id="comment-list"></div>
@@ -266,18 +277,6 @@ export async function renderPost(root, { slug, tag } = {}) {
     const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const action = btn.dataset.action;
-    if (action === 'share') {
-      try {
-        const res = await api.post(`/posts/${post._id}/share`);
-        if (res.shareLinks?.link) {
-          await navigator.clipboard?.writeText(res.shareLinks.link);
-          toast('Link copied to clipboard');
-        }
-      } catch (err) {
-        toast(err.message, { error: true });
-      }
-      return;
-    }
     if (!user) {
       toast('Log in to interact with posts', { error: true });
       return;
@@ -293,6 +292,23 @@ export async function renderPost(root, { slug, tag } = {}) {
       }
       toast(err.message, { error: true });
     }
+  });
+
+  root.querySelectorAll('[data-share]').forEach((el) => {
+    el.addEventListener('click', async (e) => {
+      const network = el.dataset.share;
+      if (network === 'link') {
+        e.preventDefault();
+        try {
+          const url = el.dataset.url || absoluteShareUrl(canonical);
+          await navigator.clipboard?.writeText(url);
+          toast('Link copied to clipboard');
+        } catch {
+          toast('Could not copy link', { error: true });
+        }
+      }
+      api.post(`/posts/${post._id}/share`).catch(() => {});
+    });
   });
 
   await loadComments(root, post._id, user);

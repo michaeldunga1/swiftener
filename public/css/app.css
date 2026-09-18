@@ -1121,6 +1121,62 @@ a.tag:hover {
   color: var(--signal-dark);
 }
 
+.share-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.85rem;
+  margin-top: 1rem;
+}
+
+.share-row-footer {
+  margin-top: 1.5rem;
+  padding: 1rem 1.15rem;
+}
+
+.share-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--paper-elevated);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 550;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.share-btn:hover {
+  border-color: var(--signal);
+  color: var(--signal-dark);
+  background: var(--signal-soft);
+}
+
+.share-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--signal) 55%, transparent);
+  outline-offset: 2px;
+}
+
 .comments {
   margin-top: 0.25rem;
 }

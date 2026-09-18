@@ -48,13 +48,17 @@ async function sharePost(req, res, next) {
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
     const url = `${process.env.FRONTEND_URL}${postPath(post)}`;
+    const text = post.title || 'Swiftener';
     res.json({
       sharesCount: post.sharesCount,
       shareLinks: {
-        whatsapp: `https://wa.me/?text=${encodeURIComponent(post.title + ' ' + url)}`,
-        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(url)}`,
+        x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+        twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
         facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-        email: `mailto:?subject=${encodeURIComponent(post.title)}&body=${encodeURIComponent(url)}`,
+        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+        reddit: `https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`,
+        whatsapp: `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`,
+        email: `mailto:?subject=${encodeURIComponent(text)}&body=${encodeURIComponent(url)}`,
         link: url,
       },
     });

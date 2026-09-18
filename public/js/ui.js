@@ -130,3 +130,53 @@ export function initPasswordToggles(root = document) {
     });
   });
 }
+
+/** Absolute page URL for sharing (uses site config when available). */
+export function absoluteShareUrl(path = window.location.pathname + window.location.search) {
+  const origin = (window.__SWIFTENER__?.siteUrl || window.location.origin || '').replace(/\/+$/, '');
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${origin}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+/** Build share destination URLs for common networks. */
+export function buildShareLinks(url, title = '') {
+  const text = String(title || 'Swiftener');
+  const u = encodeURIComponent(url);
+  const t = encodeURIComponent(text);
+  return {
+    x: `https://twitter.com/intent/tweet?text=${t}&url=${u}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${u}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${u}`,
+    reddit: `https://www.reddit.com/submit?url=${u}&title=${t}`,
+    whatsapp: `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`,
+    email: `mailto:?subject=${t}&body=${u}`,
+    link: url,
+  };
+}
+
+const SHARE_NETWORKS = [
+  { key: 'x', label: 'X' },
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'linkedin', label: 'LinkedIn' },
+  { key: 'reddit', label: 'Reddit' },
+  { key: 'whatsapp', label: 'WhatsApp' },
+  { key: 'email', label: 'Email' },
+  { key: 'link', label: 'Copy link', copy: true },
+];
+
+/** HTML for a social share button row. */
+export function renderShareButtons({ url, title, className = '' } = {}) {
+  const links = buildShareLinks(url, title);
+  const buttons = SHARE_NETWORKS.map(({ key, label, copy }) => {
+    if (copy) {
+      return `<button type="button" class="share-btn" data-share="link" data-url="${escapeHtml(links.link)}">${escapeHtml(label)}</button>`;
+    }
+    return `<a class="share-btn" href="${escapeHtml(links[key])}" data-share="${escapeHtml(key)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>`;
+  }).join('');
+  return `
+    <div class="share-row${className ? ` ${className}` : ''}" role="group" aria-label="Share this page">
+      <span class="share-label">Share</span>
+      <div class="share-actions">${buttons}</div>
+    </div>
+  `;
+}
