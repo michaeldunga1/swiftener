@@ -97,6 +97,7 @@ function renderFooter() {
 }
 
 route(/^\/$/, renderHome);
+route(/^\/posts\/(?<tag>[^/]+)\/(?<slug>[^/]+)$/, (root, params) => renderPost(root, params));
 route(/^\/posts\/(?<slug>[^/]+)$/, (root, params) => renderPost(root, params));
 route(/^\/login$/, renderLogin);
 route(/^\/register$/, renderRegister);

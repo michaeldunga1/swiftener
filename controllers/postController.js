@@ -10,6 +10,7 @@ async function createPost(req, res, next) {
 
     const slug = await generateUniqueSlug(title);
 
+    const nextStatus = status === 'draft' ? 'draft' : 'published';
     const post = Post.create({
       title,
       slug,
@@ -19,8 +20,8 @@ async function createPost(req, res, next) {
       tags: Array.isArray(tags) ? tags.map((t) => t.toLowerCase().trim()) : [],
       coverImage: coverImage || '',
       author: req.user._id,
-      status: status === 'published' ? 'published' : 'draft',
-      publishedAt: status === 'published' ? new Date() : null,
+      status: nextStatus,
+      publishedAt: nextStatus === 'published' ? new Date() : null,
     });
 
     res.status(201).json({ post });

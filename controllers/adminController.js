@@ -68,6 +68,8 @@ async function dashboardStats(req, res, next) {
       _id: p._id,
       title: p.title,
       slug: p.slug,
+      category: p.category,
+      tags: p.tags,
       viewsCount: p.viewsCount,
       likesCount: p.likesCount,
       commentsCount: p.commentsCount,

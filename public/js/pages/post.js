@@ -1,5 +1,5 @@
 import { api, ApiError } from '../api.js';
-import { escapeHtml, formatDate, toast, userLink } from '../ui.js';
+import { escapeHtml, formatDate, toast, userLink, postPath, renderTagLinks, tagSlug } from '../ui.js';
 import { getUser } from '../state.js';
 import { htmlForPostBody } from '../markdown.js';
 import { navigate } from '../router.js';
@@ -15,13 +15,26 @@ function canManageComment(user, comment) {
   return String(commentUserId(comment)) === String(user._id);
 }
 
-export async function renderPost(root, { slug }) {
+function expectedTag(post) {
+  return tagSlug((post.tags && post.tags[0]) || post.category || 'general');
+}
+
+export async function renderPost(root, { slug, tag } = {}) {
   const data = await api.get(`/posts/${encodeURIComponent(slug)}`);
   const post = data.post;
   const viewer = data.viewerState || {};
   const user = getUser();
   const authorLabel = post.author?.name || 'Author';
   const isAdmin = user?.role === 'admin';
+  const canonical = postPath(post);
+  const wantTag = expectedTag(post);
+  const haveTag = tag ? tagSlug(decodeURIComponent(tag)) : '';
+
+  if (haveTag !== wantTag) {
+    const hash = window.location.hash || '';
+    await navigate(`${canonical}${hash}`, { replace: true });
+    return;
+  }
 
   root.innerHTML = `
     <article>
@@ -38,6 +51,7 @@ export async function renderPost(root, { slug }) {
           }
         </div>
         <h1>${escapeHtml(post.title)}</h1>
+        <div class="tag-row" style="margin:0.5rem 0 0.75rem">${renderTagLinks(post.tags)}</div>
         <p class="muted">${post.viewsCount ?? 0} views · ${post.likesCount ?? 0} likes · ${post.commentsCount ?? 0} comments</p>
         <div class="engagement-bar" id="engagement-bar">
           <button type="button" class="btn btn-ghost ${viewer.liked ? 'active' : ''}" data-action="like">Like</button>

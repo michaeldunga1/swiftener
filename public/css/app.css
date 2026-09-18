@@ -471,6 +471,17 @@ textarea {
   background: color-mix(in srgb, var(--signal) 12%, transparent);
   color: var(--signal-dark);
   margin-right: 0.35rem;
+  text-decoration: none;
+}
+
+a.tag:hover {
+  background: color-mix(in srgb, var(--signal) 22%, transparent);
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
 .panel {

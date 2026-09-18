@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { escapeHtml, formatDate, getQuery, toast, userLink } from '../ui.js';
+import { escapeHtml, formatDate, getQuery, toast, userLink, postPath } from '../ui.js';
 import { navigate } from '../router.js';
 import { getUser } from '../state.js';
 import { loadChartJs, renderChart, seriesFromRows } from '../charts.js';
@@ -22,8 +22,10 @@ function adminNav(active) {
     ['admin/users', 'Users'],
     ['admin/reports', 'Reports'],
   ];
+  // Edit uses the same form as create; don't highlight "Create post" while editing
+  const activeKey = active === 'admin/posts/edit' ? null : active;
   return `<nav class="tabs admin-tabs">${links
-    .map(([href, label]) => `<a href="/${href}" data-link class="${active === href ? 'active' : ''}">${label}</a>`)
+    .map(([href, label]) => `<a href="/${href}" data-link class="${activeKey === href ? 'active' : ''}">${label}</a>`)
     .join('')}</nav>`;
 }
 
@@ -73,7 +75,7 @@ export async function renderAdminDashboard(root) {
     <div class="panel" style="margin-top:1.5rem">
       <h3>Top posts</h3>
       <ul>${(data.topPosts || [])
-        .map((p) => `<li><a href="/posts/${escapeHtml(p.slug)}" data-link>${escapeHtml(p.title)}</a> — ${p.viewsCount} views</li>`)
+        .map((p) => `<li><a href="${postPath(p)}" data-link>${escapeHtml(p.title)}</a> — ${p.viewsCount} views</li>`)
         .join('') || '<li class="muted">None yet</li>'}</ul>
     </div>
     <div class="panel">
@@ -96,37 +98,20 @@ export async function renderAdminDrafts(root) {
     </div>
     <div class="table-wrap panel">
       <table>
-        <thead><tr><th>Title</th><th>Updated</th><th></th></tr></thead>
+        <thead><tr><th>Title</th><th>Updated</th></tr></thead>
         <tbody>
           ${(data.posts || [])
             .map(
               (p) => `<tr>
-              <td>${escapeHtml(p.title)}</td>
+              <td><a href="${postPath(p)}" data-link>${escapeHtml(p.title)}</a></td>
               <td>${formatDate(p.updatedAt)}</td>
-              <td class="content-actions" style="white-space:nowrap">
-                <a href="/admin/posts/edit/${p._id}" data-link class="icon-btn" title="Edit draft">Edit</a>
-                <button type="button" class="icon-btn icon-btn-danger" data-delete-draft="${p._id}" title="Delete draft">Delete</button>
-              </td>
             </tr>`
             )
-            .join('') || '<tr><td colspan="3" class="muted">No drafts</td></tr>'}
+            .join('') || '<tr><td colspan="2" class="muted">No drafts</td></tr>'}
         </tbody>
       </table>
     </div>
   `;
-
-  root.querySelectorAll('[data-delete-draft]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      if (!window.confirm('Delete this draft permanently?')) return;
-      try {
-        await api.delete(`/posts/${btn.dataset.deleteDraft}`);
-        toast('Draft deleted');
-        btn.closest('tr')?.remove();
-      } catch (err) {
-        toast(err.message, { error: true });
-      }
-    });
-  });
 }
 
 export async function renderAdminPostEditor(root, { id } = {}) {
@@ -147,8 +132,11 @@ export async function renderAdminPostEditor(root, { id } = {}) {
   }
 
   const isEdit = Boolean(post?._id);
+  const status = post?.status || 'published';
+  const cancelHref = isEdit && post?.slug ? postPath(post) : '/admin/drafts';
+
   root.innerHTML = `
-    ${adminNav('admin/posts/new')}
+    ${adminNav(isEdit ? 'admin/posts/edit' : 'admin/posts/new')}
     <div class="panel">
       <h2>${isEdit ? 'Edit post' : 'Create post'}</h2>
       <form id="post-editor" class="form-stack" style="max-width:100%">
@@ -161,13 +149,13 @@ export async function renderAdminPostEditor(root, { id } = {}) {
         <label>Body (Markdown)<textarea name="body" required style="min-height:220px">${escapeHtml(post?.body || '')}</textarea></label>
         <label>Status
           <select name="status">
-            <option value="draft" ${post?.status === 'draft' ? 'selected' : ''}>Draft</option>
-            <option value="published" ${post?.status === 'published' ? 'selected' : ''}>Published</option>
+            <option value="published" ${status === 'published' ? 'selected' : ''}>Published</option>
+            <option value="draft" ${status === 'draft' ? 'selected' : ''}>Draft</option>
           </select>
         </label>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
           <button type="submit" class="btn btn-primary">Save</button>
-          ${isEdit ? `<button type="button" class="btn btn-danger" id="delete-post">Delete</button>` : ''}
+          <a href="${cancelHref}" data-link class="btn btn-ghost">Cancel</a>
         </div>
       </form>
     </div>
@@ -193,26 +181,16 @@ export async function renderAdminPostEditor(root, { id } = {}) {
     };
     try {
       if (isEdit) {
-        await api.put(`/posts/${post._id}`, payload);
+        const res = await api.put(`/posts/${post._id}`, payload);
         toast('Post updated');
-        if (payload.status === 'published') navigate(`/posts/${post.slug}`);
-        else navigate('/admin/drafts');
+        const saved = res.post || { ...post, ...payload };
+        navigate(postPath(saved));
       } else {
         const res = await api.post('/posts', payload);
         toast('Post created');
-        navigate(res.post?.slug ? `/admin/posts/edit/${res.post._id}` : '/admin/drafts');
+        if (res.post?.slug) navigate(postPath(res.post));
+        else navigate('/admin/drafts');
       }
-    } catch (err) {
-      toast(err.message, { error: true });
-    }
-  });
-
-  root.querySelector('#delete-post')?.addEventListener('click', async () => {
-    if (!window.confirm('Delete this post permanently?')) return;
-    try {
-      await api.delete(`/posts/${post._id}`);
-      toast('Post deleted');
-      navigate('/admin/drafts');
     } catch (err) {
       toast(err.message, { error: true });
     }

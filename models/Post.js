@@ -66,7 +66,7 @@ const Post = {
         data.category,
         tags,
         data.author,
-        data.status || 'draft',
+        data.status || 'published',
         toIso(data.publishedAt),
         ts,
         ts

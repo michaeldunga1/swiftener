@@ -80,6 +80,8 @@ async function myInteractedPosts(req, res, next) {
       slug: p.slug,
       excerpt: p.excerpt,
       coverImage: p.coverImage,
+      category: p.category,
+      tags: p.tags,
       viewsCount: p.viewsCount,
       likesCount: p.likesCount,
       publishedAt: p.publishedAt,

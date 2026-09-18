@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { escapeHtml, formatDate, toast, passwordInput, initPasswordToggles, userLink } from '../ui.js';
+import { escapeHtml, formatDate, toast, passwordInput, initPasswordToggles, userLink, postPath } from '../ui.js';
 import { navigate } from '../router.js';
 import { getUser, refreshUser } from '../state.js';
 
@@ -142,7 +142,7 @@ export async function renderProfileList(root, type, tabKey) {
               .map(
                 (p) => `
         <article class="post-card">
-          <h2><a href="/posts/${escapeHtml(p.slug)}" data-link>${escapeHtml(p.title)}</a></h2>
+          <h2><a href="${postPath(p)}" data-link>${escapeHtml(p.title)}</a></h2>
           <p class="post-meta">${formatDate(p.publishedAt)}</p>
         </article>`
               )

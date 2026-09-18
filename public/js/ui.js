@@ -6,6 +6,40 @@ export function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+/** URL-safe tag segment for /posts/:tag/:slug */
+export function tagSlug(tag) {
+  const s = String(tag || 'general')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return s || 'general';
+}
+
+function primaryTag(post) {
+  if (Array.isArray(post?.tags) && post.tags.length) return post.tags[0];
+  if (post?.category) return post.category;
+  return 'general';
+}
+
+/** Canonical public post path: /posts/:tag/:slug */
+export function postPath(post, { hash = '' } = {}) {
+  const slug = post?.slug;
+  if (!slug) return '/';
+  const path = `/posts/${encodeURIComponent(tagSlug(primaryTag(post)))}/${encodeURIComponent(slug)}`;
+  return hash ? `${path}${hash.startsWith('#') ? hash : `#${hash}`}` : path;
+}
+
+export function tagFilterHref(tag) {
+  return `/?tag=${encodeURIComponent(tag)}`;
+}
+
+export function renderTagLinks(tags) {
+  return (tags || [])
+    .map((t) => `<a href="${tagFilterHref(t)}" data-link class="tag">${escapeHtml(t)}</a>`)
+    .join('');
+}
+
 /** Link a name, username, or email to `/users/:id`. Falls back to plain text if no id. */
 export function userLink(user, label) {
   const id = user != null && typeof user === 'object' ? user._id : user;

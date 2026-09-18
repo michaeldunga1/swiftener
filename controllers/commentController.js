@@ -3,6 +3,7 @@ const Report = require('../models/Report');
 const Post = require('../models/Post');
 const Notification = require('../models/Notification');
 const { isUniqueViolation } = require('../config/db');
+const { postPath } = require('../utils/postPath');
 
 const REPORT_HIDE_THRESHOLD = 5;
 
@@ -29,7 +30,7 @@ async function createComment(req, res, next) {
         recipient: post.author,
         type: 'comment',
         message: `${req.user.name} commented on "${post.title}"`,
-        link: `/posts/${post.slug}#comment-${comment._id}`,
+        link: postPath(post, { hash: `comment-${comment._id}` }),
         relatedPost: post._id,
         relatedComment: comment._id,
       }).catch((e) => console.error('[notification] create failed', e.message));

@@ -5,6 +5,7 @@ const View = require('../models/View');
 const Notification = require('../models/Notification');
 
 const COUNT_FIELD = { like: 'likesCount', save: 'savesCount', bookmark: 'bookmarksCount' };
+const { postPath } = require('../utils/postPath');
 
 function toggleInteraction(type) {
   return async function (req, res, next) {
@@ -29,7 +30,7 @@ function toggleInteraction(type) {
           recipient: post.author,
           type: 'like',
           message: `${req.user.name} liked "${post.title}"`,
-          link: `/posts/${post.slug}`,
+          link: postPath(post),
           relatedPost: post._id,
         }).catch((e) => console.error('[notification] create failed', e.message));
       }
@@ -46,7 +47,7 @@ async function sharePost(req, res, next) {
     const post = Post.increment(req.params.postId, 'sharesCount', 1);
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
-    const url = `${process.env.FRONTEND_URL}/posts/${post.slug}`;
+    const url = `${process.env.FRONTEND_URL}${postPath(post)}`;
     res.json({
       sharesCount: post.sharesCount,
       shareLinks: {

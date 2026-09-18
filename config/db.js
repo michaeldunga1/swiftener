@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS posts (
   category TEXT NOT NULL,
   tags TEXT NOT NULL DEFAULT '[]',
   author_id INTEGER NOT NULL REFERENCES users(id),
-  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+  status TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published')),
   published_at TEXT,
   views_count INTEGER NOT NULL DEFAULT 0,
   likes_count INTEGER NOT NULL DEFAULT 0,
