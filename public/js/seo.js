@@ -103,17 +103,17 @@ export function loadAdSense() {
   document.head.appendChild(s);
 }
 
-/** Render a responsive AdSense unit. Returns HTML string (empty if ads disabled). */
-export function adSlotHtml(slot = 'auto', { format = 'auto', fullWidth = true } = {}) {
+/** Render a responsive AdSense unit. Needs a real slot id from AdSense. */
+export function adSlotHtml(slot, { format = 'auto', fullWidth = true } = {}) {
   const client = window.__SWIFTENER__?.adsenseClient;
   if (!client || !/^ca-pub-\d+$/.test(client)) return '';
-  const slotAttr = slot && slot !== 'auto' ? `data-ad-slot="${slot}"` : '';
+  if (!slot || slot === 'auto') return '';
   return `
     <aside class="ad-slot panel" aria-label="Advertisement">
       <ins class="adsbygoogle"
         style="display:block"
         data-ad-client="${client}"
-        ${slotAttr}
+        data-ad-slot="${slot}"
         data-ad-format="${format}"
         data-full-width-responsive="${fullWidth ? 'true' : 'false'}"></ins>
     </aside>`;
@@ -122,8 +122,12 @@ export function adSlotHtml(slot = 'auto', { format = 'auto', fullWidth = true } 
 export function pushAds() {
   const client = window.__SWIFTENER__?.adsenseClient;
   if (!client) return;
+  const pending = document.querySelectorAll('ins.adsbygoogle:not([data-adsbygoogle-status])');
+  if (!pending.length) return;
   try {
-    (window.adsbygoogle = window.adsbygoogle || []).push({});
+    pending.forEach(() => {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    });
   } catch {
     /* ignore until script loads */
   }

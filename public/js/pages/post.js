@@ -11,7 +11,7 @@ import {
 import { getUser } from '../state.js';
 import { htmlForPostBody } from '../markdown.js';
 import { navigate } from '../router.js';
-import { setPageSeo, adSlotHtml, pushAds } from '../seo.js';
+import { setPageSeo } from '../seo.js';
 
 function commentUserId(comment) {
   if (comment?.user && typeof comment.user === 'object') return comment.user._id;
@@ -171,12 +171,10 @@ export async function renderPost(root, { slug, tag } = {}) {
           <button type="button" class="btn btn-ghost" data-action="share">Share</button>
         </div>
       </header>
-      ${adSlotHtml('auto')}
       <div class="post-main">
         ${buildTocHtml(toc)}
         <div class="panel article-body" id="article-body" itemprop="articleBody"><p class="muted">Loading…</p></div>
       </div>
-      ${adSlotHtml('auto')}
       ${relatedHtml(related)}
       <section class="comments panel">
         <h2>Comments</h2>
@@ -202,10 +200,6 @@ export async function renderPost(root, { slug, tag } = {}) {
     bodyEl.textContent = post.body || '';
   }
   ensureHeadingIds(bodyEl, toc);
-  requestAnimationFrame(() => {
-    pushAds();
-    pushAds();
-  });
 
   const cleanupProgress = initReadingProgress(root.querySelector('#post-article'));
   root._cleanup = cleanupProgress;
