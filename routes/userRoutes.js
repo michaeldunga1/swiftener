@@ -10,7 +10,7 @@ router.get('/me/analytics', requireAuth, ctrl.myProfileAnalytics);
 router.get('/me/:type(save|bookmark|like)', requireAuth, ctrl.myInteractedPosts);
 router.post('/invite', requireAuth, ctrl.inviteFriend);
 
-router.get('/:id', attachUserIfPresent, ctrl.getPublicProfile); // public profile page
+router.get('/:usernameOrId', attachUserIfPresent, ctrl.getPublicProfile); // public profile page
 
 // Admin-only per-post analytics
 router.get('/analytics/post/:postId', requireAuth, ctrl.postAnalytics);

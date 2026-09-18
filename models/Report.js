@@ -63,12 +63,12 @@ const Report = {
       .prepare(
         `SELECT
            r.*,
-           rb.id AS rb_id, rb.name AS rb_name, rb.email AS rb_email,
+           rb.id AS rb_id, rb.name AS rb_name, rb.username AS rb_username, rb.email AS rb_email,
            c.id AS c_id, c.post_id AS c_post_id, c.user_id AS c_user_id, c.body AS c_body,
            c.parent_comment_id AS c_parent, c.is_deleted AS c_is_deleted,
            c.report_count AS c_report_count, c.is_hidden AS c_is_hidden,
            c.created_at AS c_created_at, c.updated_at AS c_updated_at,
-           cu.id AS cu_id, cu.name AS cu_name, cu.email AS cu_email
+           cu.id AS cu_id, cu.name AS cu_name, cu.username AS cu_username, cu.email AS cu_email
          FROM reports r
          JOIN users rb ON rb.id = r.reported_by_id
          JOIN comments c ON c.id = r.comment_id
@@ -80,7 +80,7 @@ const Report = {
 
     return rows.map((row) =>
       mapReport(row, {
-        reportedBy: { _id: row.rb_id, name: row.rb_name, email: row.rb_email },
+        reportedBy: { _id: row.rb_id, name: row.rb_name, username: row.rb_username, email: row.rb_email },
         comment: mapComment(
           {
             id: row.c_id,
@@ -94,7 +94,7 @@ const Report = {
             created_at: row.c_created_at,
             updated_at: row.c_updated_at,
           },
-          { user: { _id: row.cu_id, name: row.cu_name, email: row.cu_email } }
+          { user: { _id: row.cu_id, name: row.cu_name, username: row.cu_username, email: row.cu_email } }
         ),
       })
     );

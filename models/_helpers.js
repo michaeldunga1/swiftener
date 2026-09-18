@@ -38,6 +38,7 @@ function mapUser(row, { includeSecrets = false } = {}) {
   const user = mapBools({
     _id: row.id,
     name: row.name,
+    username: row.username || null,
     email: row.email,
     avatar: row.avatar,
     bio: row.bio,

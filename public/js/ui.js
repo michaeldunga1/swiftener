@@ -54,17 +54,35 @@ export function highlightMatch(text, query) {
   }
 }
 
-/** Link a name, username, or email to `/users/:id`. Falls back to plain text if no id. */
+/** Canonical public profile path: /users/:username (falls back to id). */
+export function userPath(user) {
+  if (user == null) return '/';
+  if (typeof user === 'object') {
+    if (user.username) return `/users/${encodeURIComponent(user.username)}`;
+    if (user._id != null) return `/users/${encodeURIComponent(user._id)}`;
+    return '/';
+  }
+  return `/users/${encodeURIComponent(user)}`;
+}
+
+/** Link a name, username, or email to `/users/:username`. Falls back to plain text if no id/username. */
 export function userLink(user, label) {
-  const id = user != null && typeof user === 'object' ? user._id : user;
   const text =
     label != null
       ? label
       : user != null && typeof user === 'object'
         ? user.name || user.email || 'User'
         : 'User';
-  if (id == null || id === '') return escapeHtml(text);
-  return `<a href="/users/${encodeURIComponent(id)}" data-link class="user-link">${escapeHtml(text)}</a>`;
+  const href =
+    user != null && typeof user === 'object'
+      ? user.username || user._id
+        ? userPath(user)
+        : null
+      : user != null && user !== ''
+        ? userPath(user)
+        : null;
+  if (!href) return escapeHtml(text);
+  return `<a href="${href}" data-link class="user-link">${escapeHtml(text)}</a>`;
 }
 
 export function formatDate(value) {

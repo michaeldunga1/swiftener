@@ -22,7 +22,7 @@ function mapRow(row) {
     userAgent: row.user_agent,
     referrer: row.referrer,
     user: row.user_id
-      ? { _id: row.user_id, name: row.user_name || null, email: row.user_email || null }
+      ? { _id: row.user_id, name: row.user_name || null, username: row.user_username || null, email: row.user_email || null }
       : row.user_id,
     meta,
     createdAt: fromIso(row.created_at),
@@ -81,7 +81,7 @@ const ErrorLog = {
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
     return getDb()
       .prepare(
-        `SELECT e.*, u.name AS user_name, u.email AS user_email
+        `SELECT e.*, u.name AS user_name, u.username AS user_username, u.email AS user_email
          FROM error_logs e
          LEFT JOIN users u ON u.id = e.user_id
          ${whereSql}

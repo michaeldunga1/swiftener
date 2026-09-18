@@ -18,16 +18,31 @@ async function getMyProfile(req, res, next) {
 
 async function getPublicProfile(req, res, next) {
   try {
-    const user = User.findById(req.params.id);
+    const key = String(req.params.usernameOrId || '').trim();
+    if (!key) return res.status(404).json({ error: 'User not found' });
+
+    let user = null;
+    let lookedUpById = false;
+    if (/^\d+$/.test(key)) {
+      user = User.findById(key);
+      lookedUpById = true;
+    } else {
+      user = User.findByUsername(key);
+    }
     if (!user) return res.status(404).json({ error: 'User not found' });
+
     const payload = {
       _id: user._id,
       name: user.name,
+      username: user.username,
       avatar: user.avatar,
       bio: user.bio,
     };
     if (req.user?.role === 'admin') {
       payload.createdAt = user.createdAt;
+    }
+    if (lookedUpById && user.username && String(user.username) !== key) {
+      payload.canonicalPath = `/users/${user.username}`;
     }
     res.json({ user: payload });
   } catch (err) {
@@ -37,16 +52,18 @@ async function getPublicProfile(req, res, next) {
 
 async function updateProfile(req, res, next) {
   try {
-    const { name, bio, avatar } = req.body;
+    const { name, bio, avatar, username } = req.body;
     const updates = {};
     if (name !== undefined) updates.name = name;
     if (bio !== undefined) updates.bio = bio;
     if (avatar !== undefined) updates.avatar = avatar;
+    if (username !== undefined) updates.username = username;
 
     const user = User.update(req.user._id, updates);
     const { password, verifyToken, resetToken, resetTokenExpiry, ...safe } = user;
     res.json({ user: safe });
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
     next(err);
   }
 }

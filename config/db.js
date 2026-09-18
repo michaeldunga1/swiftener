@@ -10,6 +10,7 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL,
+  username TEXT UNIQUE COLLATE NOCASE,
   email TEXT NOT NULL UNIQUE COLLATE NOCASE,
   password TEXT NOT NULL,
   avatar TEXT NOT NULL DEFAULT '',
@@ -189,12 +190,15 @@ function migrate(database) {
   const names = new Set(cols.map((c) => c.name));
   if (!names.has('google_id')) database.exec('ALTER TABLE users ADD COLUMN google_id TEXT');
   if (!names.has('github_id')) database.exec('ALTER TABLE users ADD COLUMN github_id TEXT');
+  if (!names.has('username')) database.exec('ALTER TABLE users ADD COLUMN username TEXT');
   database.exec(
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL'
   );
   database.exec(
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_github_id ON users(github_id) WHERE github_id IS NOT NULL'
   );
+
+  backfillUsernames(database);
 
   const plCols = database.prepare('PRAGMA table_info(page_loads)').all();
   const plNames = new Set(plCols.map((c) => c.name));
@@ -203,6 +207,49 @@ function migrate(database) {
   if (!plNames.has('is_bot')) database.exec(`ALTER TABLE page_loads ADD COLUMN is_bot INTEGER NOT NULL DEFAULT 0`);
   database.exec('CREATE INDEX IF NOT EXISTS idx_page_loads_country ON page_loads(country)');
   database.exec('CREATE INDEX IF NOT EXISTS idx_page_loads_is_bot ON page_loads(is_bot)');
+}
+
+function ensureUniqueUsernameIndex(database) {
+  // Prefer a full unique index so every username is unique (no duplicates via NULL/blank).
+  try {
+    database.exec('DROP INDEX IF EXISTS idx_users_username');
+  } catch {
+    /* ignore */
+  }
+  database.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username COLLATE NOCASE)'
+  );
+}
+
+function backfillUsernames(database) {
+  const { allocateUsername } = require('../utils/username');
+  const missing = database
+    .prepare(`SELECT id, name, email FROM users WHERE username IS NULL OR trim(username) = ''`)
+    .all();
+
+  if (missing.length) {
+    const taken = new Set(
+      database
+        .prepare(
+          `SELECT lower(username) AS u FROM users WHERE username IS NOT NULL AND trim(username) != ''`
+        )
+        .all()
+        .map((r) => r.u)
+    );
+    const update = database.prepare('UPDATE users SET username = ? WHERE id = ?');
+    const tx = database.transaction((rows) => {
+      for (const row of rows) {
+        const seed = row.name || String(row.email || '').split('@')[0] || `user-${row.id}`;
+        const username = allocateUsername(seed, (candidate) => taken.has(candidate.toLowerCase()));
+        taken.add(username.toLowerCase());
+        update.run(username, row.id);
+      }
+    });
+    tx(missing);
+    console.log(`[db] Backfilled usernames for ${missing.length} users`);
+  }
+
+  ensureUniqueUsernameIndex(database);
 }
 
 function backfillPageLoadGeo(database) {

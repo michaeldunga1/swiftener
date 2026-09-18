@@ -2,7 +2,7 @@ import { route, initRouter, renderCurrent, navigate, setAfterRender } from './ro
 import { refreshUser, clearUser, getUser } from './state.js';
 import { api } from './api.js';
 import { setPageSeo, loadAdSense } from './seo.js';
-import { escapeHtml, toast } from './ui.js';
+import { escapeHtml, toast, userPath } from './ui.js';
 import { renderHome } from './pages/home.js';
 import { renderPost } from './pages/post.js';
 import {
@@ -107,7 +107,7 @@ function renderNav() {
 
   if (user) {
     actions.innerHTML = `
-      <a href="/users/${user._id}" data-link class="user-link muted">${escapeHtml(user.name)}</a>
+      <a href="${userPath(user)}" data-link class="user-link muted">${escapeHtml(user.name)}</a>
       <button type="button" class="btn btn-ghost" id="logout-btn">Log out</button>
     `;
     actions.querySelector('#logout-btn').addEventListener('click', async () => {
@@ -160,7 +160,7 @@ route(/^\/profile\/saved$/, (root) => renderProfileList(root, 'save', 'profile/s
 route(/^\/profile\/liked$/, (root) => renderProfileList(root, 'like', 'profile/liked'));
 route(/^\/profile\/bookmarked$/, (root) => renderProfileList(root, 'bookmark', 'profile/bookmarked'));
 route(/^\/profile\/notifications$/, renderNotifications);
-route(/^\/users\/(?<id>\d+)$/, (root, params) => renderPublicProfile(root, params));
+route(/^\/users\/(?<username>[^/]+)$/, (root, params) => renderPublicProfile(root, params));
 route(/^\/newsletter$/, renderNewsletter);
 route(/^\/newsletter\/verify$/, renderNewsletterVerify);
 route(/^\/newsletter\/unsubscribe$/, renderNewsletterUnsubscribe);

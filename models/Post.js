@@ -1,11 +1,20 @@
 const { getDb, now, toIso, mapPost } = require('./_helpers');
 const Comment = require('./Comment');
+const { isUniqueViolation } = require('../config/db');
+
+function UniqueSlugError(message = 'Post slug must be unique') {
+  const err = new Error(message);
+  err.statusCode = 409;
+  err.code = 'SQLITE_CONSTRAINT_UNIQUE';
+  return err;
+}
 
 function authorSnippet(row) {
   if (row.author_name == null) return row.author_id;
   return {
     _id: row.author_id,
     name: row.author_name,
+    username: row.author_username || null,
     avatar: row.author_avatar,
     ...(row.author_bio !== undefined ? { bio: row.author_bio } : {}),
   };
@@ -24,7 +33,7 @@ const Post = {
     const includeBio = authorFields.includes('bio');
     const row = getDb()
       .prepare(
-        `SELECT p.*, u.name AS author_name, u.avatar AS author_avatar
+        `SELECT p.*, u.name AS author_name, u.username AS author_username, u.avatar AS author_avatar
          ${includeBio ? ', u.bio AS author_bio' : ''}
          FROM posts p
          JOIN users u ON u.id = p.author_id
@@ -50,28 +59,33 @@ const Post = {
   create(data) {
     const ts = now();
     const tags = JSON.stringify(data.tags || []);
-    const info = getDb()
-      .prepare(
-        `INSERT INTO posts (
-           title, slug, body, excerpt, cover_image, category, tags, author_id,
-           status, published_at, created_at, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
-        data.title,
-        data.slug,
-        data.body,
-        data.excerpt || '',
-        data.coverImage || '',
-        data.category,
-        tags,
-        data.author,
-        data.status || 'published',
-        toIso(data.publishedAt),
-        ts,
-        ts
-      );
-    return this.findById(info.lastInsertRowid);
+    try {
+      const info = getDb()
+        .prepare(
+          `INSERT INTO posts (
+             title, slug, body, excerpt, cover_image, category, tags, author_id,
+             status, published_at, created_at, updated_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .run(
+          data.title,
+          data.slug,
+          data.body,
+          data.excerpt || '',
+          data.coverImage || '',
+          data.category,
+          tags,
+          data.author,
+          data.status || 'published',
+          toIso(data.publishedAt),
+          ts,
+          ts
+        );
+      return this.findById(info.lastInsertRowid);
+    } catch (err) {
+      if (isUniqueViolation(err)) throw UniqueSlugError();
+      throw err;
+    }
   },
 
   update(id, fields) {
@@ -107,7 +121,12 @@ const Post = {
     sets.push('updated_at = ?');
     values.push(now());
     values.push(id);
-    getDb().prepare(`UPDATE posts SET ${sets.join(', ')} WHERE id = ?`).run(...values);
+    try {
+      getDb().prepare(`UPDATE posts SET ${sets.join(', ')} WHERE id = ?`).run(...values);
+    } catch (err) {
+      if (isUniqueViolation(err)) throw UniqueSlugError();
+      throw err;
+    }
     return this.findById(id);
   },
 
@@ -163,7 +182,7 @@ const Post = {
     const whereSql = where.join(' AND ');
     const rows = getDb()
       .prepare(
-        `SELECT p.*, u.name AS author_name, u.avatar AS author_avatar
+        `SELECT p.*, u.name AS author_name, u.username AS author_username, u.avatar AS author_avatar
          FROM posts p
          JOIN users u ON u.id = p.author_id
          WHERE ${whereSql}
@@ -246,7 +265,7 @@ const Post = {
       : '';
     const rows = getDb()
       .prepare(
-        `SELECT p.*, u.name AS author_name, u.avatar AS author_avatar,
+        `SELECT p.*, u.name AS author_name, u.username AS author_username, u.avatar AS author_avatar,
            (
              CASE WHEN lower(p.category) = lower(?) THEN 3 ELSE 0 END
              ${tagScoreSql}

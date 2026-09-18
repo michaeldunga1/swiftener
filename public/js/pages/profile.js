@@ -1,5 +1,5 @@
 import { api } from '../api.js';
-import { escapeHtml, formatDate, toast, passwordInput, initPasswordToggles, userLink, postPath } from '../ui.js';
+import { escapeHtml, formatDate, toast, passwordInput, initPasswordToggles, userLink, userPath, postPath } from '../ui.js';
 import { navigate } from '../router.js';
 import { getUser, refreshUser } from '../state.js';
 import { setPageSeo, setNoIndex } from '../seo.js';
@@ -24,10 +24,10 @@ function requireLogin(root) {
   return false;
 }
 
-export async function renderPublicProfile(root, { id }) {
+export async function renderPublicProfile(root, { username }) {
   let data;
   try {
-    data = await api.get(`/users/${encodeURIComponent(id)}`);
+    data = await api.get(`/users/${encodeURIComponent(username)}`);
   } catch (err) {
     root.innerHTML = `<div class="panel"><p>${escapeHtml(err.message || 'User not found')}</p></div>`;
     return;
@@ -35,11 +35,21 @@ export async function renderPublicProfile(root, { id }) {
   const profile = data.user;
   const me = getUser();
   const isSelf = me && String(me._id) === String(profile._id);
+  const canonical = userPath(profile);
+
+  if (profile.canonicalPath && profile.canonicalPath !== window.location.pathname) {
+    await navigate(profile.canonicalPath, { replace: true });
+    return;
+  }
+  if (profile.username && window.location.pathname !== canonical) {
+    await navigate(canonical, { replace: true });
+    return;
+  }
 
   setPageSeo({
     title: profile.name || 'Profile',
     description: profile.bio || `${profile.name || 'User'} on Swiftener.`,
-    path: `/users/${profile._id}`,
+    path: canonical,
     image: profile.avatar || '',
     jsonLd: {
       '@context': 'https://schema.org',
@@ -54,6 +64,7 @@ export async function renderPublicProfile(root, { id }) {
     <div class="panel">
       <p class="muted profile-eyebrow">Profile</p>
       <h1 class="profile-name">${escapeHtml(profile.name || 'User')}</h1>
+      ${profile.username ? `<p class="muted">@${escapeHtml(profile.username)}</p>` : ''}
       ${profile.bio ? `<p>${escapeHtml(profile.bio)}</p>` : '<p class="muted">No bio yet.</p>'}
       ${me?.role === 'admin' && profile.createdAt ? `<p class="muted">Member since ${formatDate(profile.createdAt)}</p>` : ''}
       ${
@@ -75,9 +86,11 @@ export async function renderProfile(root) {
     <div class="panel">
       <h2>${userLink(user, user.name)}</h2>
       <p class="muted">${userLink(user, user.email)} · ${user.role}</p>
-      <p class="muted"><a href="/users/${user._id}" data-link>View public profile</a></p>
+      <p class="muted"><a href="${userPath(user)}" data-link>View public profile</a></p>
       <form id="profile-form" class="form-stack form-wide form-spaced">
         <label>Name<input name="name" value="${escapeHtml(user.name)}" required /></label>
+        <label>Username<input name="username" value="${escapeHtml(user.username || '')}" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" minlength="2" maxlength="32" autocomplete="username" /></label>
+        <p class="muted form-hint">Public profile URL: /users/${escapeHtml(user.username || '…')}</p>
         <label>Bio<textarea name="bio" maxlength="500">${escapeHtml(user.bio || '')}</textarea></label>
         <label>Avatar URL<input name="avatar" value="${escapeHtml(user.avatar || '')}" placeholder="https://…" /></label>
         <button type="submit" class="btn btn-primary">Save profile</button>
@@ -109,6 +122,7 @@ export async function renderProfile(root) {
     try {
       await api.put('/users/me', {
         name: fd.get('name'),
+        username: fd.get('username'),
         bio: fd.get('bio'),
         avatar: fd.get('avatar'),
       });

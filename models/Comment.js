@@ -5,6 +5,7 @@ function userSnippet(row) {
   return {
     _id: row.user_id,
     name: row.user_name,
+    username: row.user_username || null,
     avatar: row.user_avatar,
     ...(row.user_email !== undefined ? { email: row.user_email } : {}),
   };
@@ -30,7 +31,7 @@ const Comment = {
   findByIdWithUser(id) {
     const row = getDb()
       .prepare(
-        `SELECT c.*, u.name AS user_name, u.avatar AS user_avatar
+        `SELECT c.*, u.name AS user_name, u.username AS user_username, u.avatar AS user_avatar
          FROM comments c
          JOIN users u ON u.id = c.user_id
          WHERE c.id = ?`
@@ -41,7 +42,7 @@ const Comment = {
   },
 
   listForPost(postId, { includeHidden = false } = {}) {
-    let sql = `SELECT c.*, u.name AS user_name, u.avatar AS user_avatar
+    let sql = `SELECT c.*, u.name AS user_name, u.username AS user_username, u.avatar AS user_avatar
                FROM comments c
                JOIN users u ON u.id = c.user_id
                WHERE c.post_id = ? AND c.is_deleted = 0`;

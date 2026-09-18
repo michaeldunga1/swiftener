@@ -24,7 +24,7 @@ function mapRow(row) {
     city: row.city || '',
     isBot: Boolean(row.is_bot),
     user: row.user_id
-      ? { _id: row.user_id, name: row.user_name || null, email: row.user_email || null }
+      ? { _id: row.user_id, name: row.user_name || null, username: row.user_username || null, email: row.user_email || null }
       : row.user_id,
     createdAt: fromIso(row.created_at),
   };
@@ -85,7 +85,7 @@ const PageLoad = {
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const rows = getDb()
       .prepare(
-        `SELECT pl.*, u.name AS user_name, u.email AS user_email
+        `SELECT pl.*, u.name AS user_name, u.username AS user_username, u.email AS user_email
          FROM page_loads pl
          LEFT JOIN users u ON u.id = pl.user_id
          ${whereSql}

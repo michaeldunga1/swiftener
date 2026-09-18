@@ -1,9 +1,28 @@
 const { getDb, now, toIso, mapUser } = require('./_helpers');
+const { allocateUsername, validateUsername } = require('../utils/username');
+const { isUniqueViolation } = require('../config/db');
+
+function usernameTaken(username, excludeId = null) {
+  const row = excludeId
+    ? getDb()
+        .prepare('SELECT id FROM users WHERE lower(username) = lower(?) AND id != ?')
+        .get(username, excludeId)
+    : getDb().prepare('SELECT id FROM users WHERE lower(username) = lower(?)').get(username);
+  return Boolean(row);
+}
 
 const User = {
   findById(id, { includePassword = false, includeTokens = false } = {}) {
     const row = getDb().prepare('SELECT * FROM users WHERE id = ?').get(id);
     return mapUser(row, { includeSecrets: includePassword || includeTokens });
+  },
+
+  findByUsername(username, opts = {}) {
+    if (!username) return null;
+    const row = getDb()
+      .prepare('SELECT * FROM users WHERE lower(username) = lower(?)')
+      .get(String(username));
+    return mapUser(row, { includeSecrets: opts.includeSecrets });
   },
 
   findOne({ email, googleId, githubId, verifyToken, resetToken, resetTokenExpiryGt } = {}, opts = {}) {
@@ -34,6 +53,7 @@ const User = {
     name,
     email,
     password,
+    username = null,
     verifyToken = null,
     invitedBy = null,
     role = 'user',
@@ -43,15 +63,19 @@ const User = {
     isVerified = false,
   }) {
     const ts = now();
+    const seed = username || name || String(email || '').split('@')[0] || 'user';
+    const uniqueUsername = allocateUsername(seed, (candidate) => usernameTaken(candidate));
+
     const info = getDb()
       .prepare(
         `INSERT INTO users (
-           name, email, password, verify_token, invited_by, role,
+           name, username, email, password, verify_token, invited_by, role,
            google_id, github_id, avatar, is_verified, created_at, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         name,
+        uniqueUsername,
         email.toLowerCase(),
         password,
         verifyToken,
@@ -70,6 +94,7 @@ const User = {
   update(id, fields) {
     const allowed = {
       name: 'name',
+      username: 'username',
       email: 'email',
       password: 'password',
       avatar: 'avatar',
@@ -92,7 +117,20 @@ const User = {
     for (const [key, col] of Object.entries(allowed)) {
       if (!(key in fields)) continue;
       let val = fields[key];
-      if (key === 'isBlocked' || key === 'isSuspended' || key === 'isVerified') {
+      if (key === 'username') {
+        const check = validateUsername(val);
+        if (!check.ok) {
+          const err = new Error(check.error);
+          err.statusCode = 400;
+          throw err;
+        }
+        if (usernameTaken(check.username, id)) {
+          const err = new Error('Username is already taken');
+          err.statusCode = 409;
+          throw err;
+        }
+        val = check.username;
+      } else if (key === 'isBlocked' || key === 'isSuspended' || key === 'isVerified') {
         val = val ? 1 : 0;
       } else if (key === 'suspendedUntil' || key === 'resetTokenExpiry' || key === 'lastLoginAt') {
         val = toIso(val);
@@ -107,7 +145,16 @@ const User = {
     sets.push('updated_at = ?');
     values.push(now());
     values.push(id);
-    getDb().prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).run(...values);
+    try {
+      getDb().prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).run(...values);
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        const e = new Error('Username is already taken');
+        e.statusCode = 409;
+        throw e;
+      }
+      throw err;
+    }
     return this.findById(id, { includePassword: true, includeTokens: true });
   },
 
@@ -122,8 +169,10 @@ const User = {
     if (filter.q) {
       const like = `%${filter.q}%`;
       return getDb()
-        .prepare('SELECT COUNT(*) AS c FROM users WHERE name LIKE ? OR email LIKE ?')
-        .get(like, like).c;
+        .prepare(
+          'SELECT COUNT(*) AS c FROM users WHERE name LIKE ? OR email LIKE ? OR username LIKE ?'
+        )
+        .get(like, like, like).c;
     }
     return getDb().prepare('SELECT COUNT(*) AS c FROM users').get().c;
   },
@@ -136,11 +185,11 @@ const User = {
       rows = db
         .prepare(
           `SELECT * FROM users
-           WHERE name LIKE ? OR email LIKE ?
+           WHERE name LIKE ? OR email LIKE ? OR username LIKE ?
            ORDER BY created_at DESC
            LIMIT ? OFFSET ?`
         )
-        .all(like, like, Number(limit), Number(offset));
+        .all(like, like, like, Number(limit), Number(offset));
     } else {
       rows = db
         .prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?')
