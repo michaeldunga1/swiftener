@@ -3,6 +3,7 @@ const Interaction = require('../models/Interaction');
 const { generateUniqueSlug } = require('../utils/slugify');
 const { renderMarkdown, extractToc } = require('../utils/markdown');
 const { readingStats } = require('../utils/reading');
+const { notifySubscribersOfNewPostAsync } = require('../utils/newsletterNotify');
 
 async function createPost(req, res, next) {
   try {
@@ -24,6 +25,10 @@ async function createPost(req, res, next) {
       status: nextStatus,
       publishedAt: nextStatus === 'published' ? new Date() : null,
     });
+
+    if (nextStatus === 'published') {
+      notifySubscribersOfNewPostAsync(post);
+    }
 
     res.status(201).json({ post });
   } catch (err) {
@@ -55,6 +60,12 @@ async function updatePost(req, res, next) {
     }
 
     const updated = Post.update(post._id, updates);
+    const firstPublish =
+      post.status !== 'published' && updated.status === 'published' && !post.publishedAt;
+    if (firstPublish) {
+      notifySubscribersOfNewPostAsync(updated);
+    }
+
     res.json({ post: updated });
   } catch (err) {
     next(err);
