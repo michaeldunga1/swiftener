@@ -1,7 +1,7 @@
 import { route, initRouter, renderCurrent, navigate, setAfterRender } from './router.js';
 import { refreshUser, clearUser, getUser } from './state.js';
 import { api } from './api.js';
-import { toast, escapeHtml } from './ui.js';
+import { setPageSeo, loadAdSense } from './seo.js';
 import { renderHome } from './pages/home.js';
 import { renderPost } from './pages/post.js';
 import {
@@ -194,6 +194,7 @@ async function boot() {
     renderNav();
     renderFooter();
     trackPageLoad();
+    loadAdSense();
   });
   initRouter();
   try {

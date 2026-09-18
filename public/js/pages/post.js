@@ -11,6 +11,7 @@ import {
 import { getUser } from '../state.js';
 import { htmlForPostBody } from '../markdown.js';
 import { navigate } from '../router.js';
+import { setPageSeo, adSlotHtml, pushAds } from '../seo.js';
 
 function commentUserId(comment) {
   if (comment?.user && typeof comment.user === 'object') return comment.user._id;
@@ -125,8 +126,28 @@ export async function renderPost(root, { slug, tag } = {}) {
     return;
   }
 
+  const description = (post.excerpt || post.title || '').trim().slice(0, 160);
+  setPageSeo({
+    title: post.title,
+    description: description || 'Read this article on Swiftener.',
+    path: canonical,
+    image: post.coverImage || '',
+    type: 'article',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: post.title,
+      description,
+      image: post.coverImage || undefined,
+      datePublished: post.publishedAt,
+      dateModified: post.updatedAt,
+      author: { '@type': 'Person', name: authorLabel },
+      mainEntityOfPage: canonical,
+    },
+  });
+
   root.innerHTML = `
-    <article class="post-layout" id="post-article">
+    <article class="post-layout" id="post-article" itemscope itemtype="https://schema.org/BlogPosting">
       <header class="article-header panel">
         <div class="article-header-top">
           <p class="post-meta">${escapeHtml(post.category)} · ${formatDate(post.publishedAt)} · ${userLink(post.author, authorLabel)} · ${reading.minutes} min read</p>
@@ -139,8 +160,8 @@ export async function renderPost(root, { slug, tag } = {}) {
               : ''
           }
         </div>
-        <h1>${escapeHtml(post.title)}</h1>
-        ${post.coverImage ? `<img class="post-cover" src="${escapeHtml(post.coverImage)}" alt="" />` : ''}
+        <h1 itemprop="headline">${escapeHtml(post.title)}</h1>
+        ${post.coverImage ? `<img class="post-cover" src="${escapeHtml(post.coverImage)}" alt="${escapeHtml(post.title)}" itemprop="image" />` : ''}
         <div class="tag-row" style="margin:0.5rem 0 0.75rem">${renderTagLinks(post.tags)}</div>
         <p class="muted">${post.viewsCount ?? 0} views · ${post.likesCount ?? 0} likes · ${post.commentsCount ?? 0} comments</p>
         <div class="engagement-bar" id="engagement-bar">
@@ -150,10 +171,12 @@ export async function renderPost(root, { slug, tag } = {}) {
           <button type="button" class="btn btn-ghost" data-action="share">Share</button>
         </div>
       </header>
+      ${adSlotHtml('auto')}
       <div class="post-main">
         ${buildTocHtml(toc)}
-        <div class="panel article-body" id="article-body"><p class="muted">Loading…</p></div>
+        <div class="panel article-body" id="article-body" itemprop="articleBody"><p class="muted">Loading…</p></div>
       </div>
+      ${adSlotHtml('auto')}
       ${relatedHtml(related)}
       <section class="comments panel">
         <h2>Comments</h2>
@@ -179,6 +202,10 @@ export async function renderPost(root, { slug, tag } = {}) {
     bodyEl.textContent = post.body || '';
   }
   ensureHeadingIds(bodyEl, toc);
+  requestAnimationFrame(() => {
+    pushAds();
+    pushAds();
+  });
 
   const cleanupProgress = initReadingProgress(root.querySelector('#post-article'));
   root._cleanup = cleanupProgress;

@@ -2,8 +2,10 @@ import { api } from '../api.js';
 import { escapeHtml, getQuery, toast, passwordInput, initPasswordToggles } from '../ui.js';
 import { navigate } from '../router.js';
 import { refreshUser } from '../state.js';
+import { setNoIndex } from '../seo.js';
 
 function authPanel(title, bodyHtml) {
+  setNoIndex(title);
   return `
     <div class="panel" style="max-width:480px;margin-inline:auto">
       <h2>${escapeHtml(title)}</h2>

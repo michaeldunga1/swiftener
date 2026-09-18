@@ -50,11 +50,14 @@ app.use('/uploads', express.static(UPLOAD_ROOT));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
 
+const { mountSeoRoutes, sendSpaHtml } = require('./routes/seoRoutes');
+mountSeoRoutes(app);
+
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/auth/') || req.path.startsWith('/uploads/')) return next();
-  res.sendFile(path.join(publicDir, 'index.html'));
+  sendSpaHtml(req, res);
 });
 
 app.use(notFound);

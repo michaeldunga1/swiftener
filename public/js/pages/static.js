@@ -1,4 +1,5 @@
 import { escapeHtml } from '../ui.js';
+import { setPageSeo } from '../seo.js';
 
 function pageShell(title, bodyHtml) {
   return `
@@ -10,6 +11,11 @@ function pageShell(title, bodyHtml) {
 }
 
 export function renderAbout(root) {
+  setPageSeo({
+    title: 'About',
+    description: 'About Swiftener — long-form writing and thoughtful discussion.',
+    path: '/about',
+  });
   root.innerHTML = pageShell(
     'About',
     `
@@ -20,6 +26,11 @@ export function renderAbout(root) {
 }
 
 export function renderContact(root) {
+  setPageSeo({
+    title: 'Contact',
+    description: 'Contact Swiftener for questions, feedback, or partnership ideas.',
+    path: '/contact',
+  });
   root.innerHTML = pageShell(
     'Contact',
     `
@@ -31,12 +42,19 @@ export function renderContact(root) {
 }
 
 export function renderPrivacy(root) {
+  setPageSeo({
+    title: 'Privacy Policy',
+    description: 'How Swiftener collects, uses, and protects your information, including ads and analytics.',
+    path: '/privacy',
+  });
   root.innerHTML = pageShell(
     'Privacy Policy',
     `
-      <p>Last updated: September 16, 2026</p>
+      <p>Last updated: September 18, 2026</p>
       <p>We collect account details you provide (such as name and email), content you publish or comment with, and basic usage data like page views to operate and improve Swiftener.</p>
       <p>Authentication cookies keep you signed in. Analytics may include IP address, browser, device, and approximate location derived from IP.</p>
+      <h2 style="font-family:var(--font-display);font-size:1.25rem">Advertising</h2>
+      <p>We may show ads served by Google AdSense (and similar partners). These partners may use cookies or similar technologies to show relevant ads based on your visits to this and other sites. You can learn more and manage ad personalization in <a href="https://adssettings.google.com/" rel="noopener noreferrer" target="_blank">Google Ads Settings</a> and review Google’s policies at <a href="https://policies.google.com/technologies/ads" rel="noopener noreferrer" target="_blank">How Google uses information from sites or apps that use our services</a>.</p>
       <p>We do not sell your personal information. Contact us if you want to update or delete your account data.</p>
       <p><a href="/contact" data-link>Contact</a></p>
     `
@@ -44,6 +62,11 @@ export function renderPrivacy(root) {
 }
 
 export function renderTerms(root) {
+  setPageSeo({
+    title: 'Terms of Use',
+    description: 'Terms of use for the Swiftener publishing platform.',
+    path: '/terms',
+  });
   root.innerHTML = pageShell(
     'Terms of Use',
     `

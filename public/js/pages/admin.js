@@ -3,10 +3,15 @@ import { escapeHtml, formatDate, getQuery, toast, userLink, postPath } from '../
 import { navigate } from '../router.js';
 import { getUser } from '../state.js';
 import { loadChartJs, renderChart, seriesFromRows } from '../charts.js';
+import { setNoIndex } from '../seo.js';
 
 function requireAdmin(root) {
   const user = getUser();
-  if (user?.role === 'admin') return true;
+  if (user?.role === 'admin') {
+    setNoIndex('Admin');
+    return true;
+  }
+  setNoIndex('Admin');
   root.innerHTML = '<div class="panel"><p>Admin access required.</p></div>';
   return false;
 }

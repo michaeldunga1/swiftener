@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Swiftener">
+  <rect width="64" height="64" rx="14" fill="#0d9488"/>
+  <path d="M18 40 L32 16 L46 40 H36 L32 32 L28 40 Z" fill="#fffdf8"/>
+  <path d="M22 46 H42" stroke="#fffdf8" stroke-width="4" stroke-linecap="round"/>
+</svg>

@@ -286,6 +286,18 @@ const Post = {
       .all();
     return { categories, tags };
   },
+
+  listForSitemap() {
+    return getDb()
+      .prepare(
+        `SELECT id, title, slug, category, tags, cover_image, excerpt,
+                published_at, updated_at
+         FROM posts WHERE status = 'published'
+         ORDER BY published_at DESC`
+      )
+      .all()
+      .map((r) => mapPost(r));
+  },
 };
 
 module.exports = Post;

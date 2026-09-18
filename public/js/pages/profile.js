@@ -2,6 +2,7 @@ import { api } from '../api.js';
 import { escapeHtml, formatDate, toast, passwordInput, initPasswordToggles, userLink, postPath } from '../ui.js';
 import { navigate } from '../router.js';
 import { getUser, refreshUser } from '../state.js';
+import { setPageSeo, setNoIndex } from '../seo.js';
 
 function profileTabs(active) {
   const tabs = [
@@ -18,6 +19,7 @@ function profileTabs(active) {
 
 function requireLogin(root) {
   if (getUser()) return true;
+  setNoIndex('Profile');
   root.innerHTML = '<div class="panel"><p><a href="/login" data-link>Log in</a> to view your profile.</p></div>';
   return false;
 }
@@ -33,6 +35,20 @@ export async function renderPublicProfile(root, { id }) {
   const profile = data.user;
   const me = getUser();
   const isSelf = me && String(me._id) === String(profile._id);
+
+  setPageSeo({
+    title: profile.name || 'Profile',
+    description: profile.bio || `${profile.name || 'User'} on Swiftener.`,
+    path: `/users/${profile._id}`,
+    image: profile.avatar || '',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: profile.name,
+      description: profile.bio || undefined,
+      image: profile.avatar || undefined,
+    },
+  });
 
   root.innerHTML = `
     <div class="panel">
@@ -52,6 +68,7 @@ export async function renderPublicProfile(root, { id }) {
 
 export async function renderProfile(root) {
   if (!requireLogin(root)) return;
+  setNoIndex('Your profile');
   const user = getUser();
   root.innerHTML = `
     ${profileTabs('profile')}
@@ -132,6 +149,7 @@ export async function renderProfile(root) {
 
 export async function renderProfileList(root, type, tabKey) {
   if (!requireLogin(root)) return;
+  setNoIndex(tabKey);
   const data = await api.get(`/users/me/${type}`);
   root.innerHTML = `
     ${profileTabs(tabKey)}
@@ -155,6 +173,7 @@ export async function renderProfileList(root, type, tabKey) {
 
 export async function renderNotifications(root) {
   if (!requireLogin(root)) return;
+  setNoIndex('Notifications');
   const data = await api.get('/notifications');
   root.innerHTML = `
     ${profileTabs('profile/notifications')}

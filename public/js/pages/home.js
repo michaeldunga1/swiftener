@@ -9,6 +9,7 @@ import {
   renderTagLinks,
   highlightMatch,
 } from '../ui.js';
+import { setPageSeo } from '../seo.js';
 
 function chip(label, href, active) {
   return `<a href="${href}" data-link class="filter-chip${active ? ' active' : ''}">${escapeHtml(label)}</a>`;
@@ -27,6 +28,22 @@ export async function renderHome(root) {
     api.get(`/posts${qs ? `?${qs}` : ''}`),
     api.get('/posts/meta/facets').catch(() => ({ categories: [], tags: [] })),
   ]);
+
+  const descParts = ['Long-form writing and thoughtful discussion on Swiftener.'];
+  if (q.q) descParts.unshift(`Search results for “${q.q}”.`);
+  if (q.category) descParts.unshift(`Posts in ${q.category}.`);
+  if (q.tag) descParts.unshift(`Posts tagged ${q.tag}.`);
+  setPageSeo({
+    title: q.q ? `Search: ${q.q}` : q.tag ? `#${q.tag}` : q.category ? q.category : 'Swiftener — ideas, sharpened',
+    description: descParts.join(' '),
+    path: window.location.pathname + window.location.search,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'Swiftener',
+      url: window.__SWIFTENER__?.siteUrl || window.location.origin,
+    },
+  });
 
   const categoryChips = (facets.categories || [])
     .slice(0, 10)
