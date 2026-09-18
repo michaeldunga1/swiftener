@@ -4,6 +4,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
+const { hideTimestampsFromNonAdmins } = require('./middleware/hideTimestamps');
 
 const authRoutes = require('./routes/authRoutes');
 const authCtrl = require('./controllers/authController');
@@ -32,6 +33,7 @@ app.use(cookieParser());
 
 // Mount this router tree under whatever base path fits your existing Swiftener app,
 // e.g. app.use('/blog', blogRouter) if you want it namespaced alongside your existing tools.
+app.use('/api', hideTimestampsFromNonAdmins);
 app.use('/api/auth', authRoutes);
 // OAuth provider callbacks (path must match redirect_uri in Google/GitHub app settings)
 app.get('/auth/google/callback', authCtrl.googleCallback);

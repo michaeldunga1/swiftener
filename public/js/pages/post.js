@@ -51,16 +51,54 @@ function buildTocHtml(toc) {
   if (!toc?.length) return '';
   return `
     <nav class="post-toc panel" aria-label="Table of contents">
-      <h2>On this page</h2>
-      <ol>
-        ${toc
-          .map(
-            (item) =>
-              `<li class="toc-level-${item.level}"><a href="#${escapeHtml(item.id)}">${escapeHtml(item.text)}</a></li>`
-          )
-          .join('')}
-      </ol>
+      <button type="button" class="toc-toggle" id="toc-toggle" aria-expanded="false" aria-controls="toc-body">
+        <span class="toc-title">On this page</span>
+        <span class="toc-toggle-icon" aria-hidden="true">▾</span>
+      </button>
+      <div class="toc-body" id="toc-body" hidden>
+        <ol>
+          ${toc
+            .map(
+              (item) =>
+                `<li class="toc-level-${item.level}"><a href="#${escapeHtml(item.id)}">${escapeHtml(item.text)}</a></li>`
+            )
+            .join('')}
+        </ol>
+      </div>
     </nav>`;
+}
+
+function initTocToggle(root) {
+  const toggle = root.querySelector('#toc-toggle');
+  const body = root.querySelector('#toc-body');
+  if (!toggle || !body) return;
+
+  const syncForViewport = () => {
+    const desktop = window.matchMedia('(min-width: 960px)').matches;
+    if (desktop) {
+      body.hidden = false;
+      toggle.setAttribute('aria-expanded', 'true');
+    } else if (!toggle.dataset.userToggled) {
+      body.hidden = true;
+      toggle.setAttribute('aria-expanded', 'false');
+    }
+  };
+
+  toggle.addEventListener('click', () => {
+    toggle.dataset.userToggled = '1';
+    const open = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', String(open));
+    body.hidden = !open;
+  });
+
+  body.addEventListener('click', (e) => {
+    if (!e.target.closest('a') || window.matchMedia('(min-width: 960px)').matches) return;
+    toggle.setAttribute('aria-expanded', 'false');
+    body.hidden = true;
+  });
+
+  window.addEventListener('resize', syncForViewport, { passive: true });
+  syncForViewport();
 }
 
 function relatedHtml(related) {
@@ -140,7 +178,7 @@ export async function renderPost(root, { slug, tag } = {}) {
       description,
       image: post.coverImage || undefined,
       datePublished: post.publishedAt,
-      dateModified: post.updatedAt,
+      dateModified: post.updatedAt || post.publishedAt,
       author: { '@type': 'Person', name: authorLabel },
       mainEntityOfPage: canonical,
     },
@@ -150,7 +188,12 @@ export async function renderPost(root, { slug, tag } = {}) {
     <article class="post-layout" id="post-article" itemscope itemtype="https://schema.org/BlogPosting">
       <header class="article-header panel">
         <div class="article-header-top">
-          <p class="post-meta">${escapeHtml(post.category)} · ${formatDate(post.publishedAt)} · ${userLink(post.author, authorLabel)} · ${reading.minutes} min read</p>
+          <p class="post-meta">
+            <span>${escapeHtml(post.category)}</span><span class="meta-sep" aria-hidden="true">·</span>
+            <time datetime="${escapeHtml(post.publishedAt || '')}">${formatDate(post.publishedAt)}</time><span class="meta-sep" aria-hidden="true">·</span>
+            ${userLink(post.author, authorLabel)}<span class="meta-sep" aria-hidden="true">·</span>
+            <span>${reading.minutes} min read</span>
+          </p>
           ${
             isAdmin
               ? `<div class="content-actions">
@@ -162,8 +205,8 @@ export async function renderPost(root, { slug, tag } = {}) {
         </div>
         <h1 itemprop="headline">${escapeHtml(post.title)}</h1>
         ${post.coverImage ? `<img class="post-cover" src="${escapeHtml(post.coverImage)}" alt="${escapeHtml(post.title)}" itemprop="image" />` : ''}
-        <div class="tag-row" style="margin:0.5rem 0 0.75rem">${renderTagLinks(post.tags)}</div>
-        <p class="muted">${post.viewsCount ?? 0} views · ${post.likesCount ?? 0} likes · ${post.commentsCount ?? 0} comments</p>
+        <div class="tag-row">${renderTagLinks(post.tags)}</div>
+        <p class="muted article-stats">${post.viewsCount ?? 0} views · ${post.likesCount ?? 0} likes · ${post.commentsCount ?? 0} comments</p>
         <div class="engagement-bar" id="engagement-bar">
           <button type="button" class="btn btn-ghost ${viewer.liked ? 'active' : ''}" data-action="like">Like</button>
           <button type="button" class="btn btn-ghost ${viewer.saved ? 'active' : ''}" data-action="save">Save</button>
@@ -181,7 +224,7 @@ export async function renderPost(root, { slug, tag } = {}) {
         <div id="comment-list"></div>
         ${
           user
-            ? `<form id="comment-form" class="form-stack" style="max-width:100%;margin-top:1rem">
+            ? `<form id="comment-form" class="form-stack form-wide form-spaced">
             <label><span>Join the conversation</span>
               <textarea name="body" required maxlength="2000" placeholder="Write a comment…"></textarea>
             </label>
@@ -200,6 +243,7 @@ export async function renderPost(root, { slug, tag } = {}) {
     bodyEl.textContent = post.body || '';
   }
   ensureHeadingIds(bodyEl, toc);
+  initTocToggle(root);
 
   const cleanupProgress = initReadingProgress(root.querySelector('#post-article'));
   root._cleanup = cleanupProgress;
@@ -284,7 +328,7 @@ async function loadComments(root, postId, user) {
       return `
         <div class="comment" id="comment-${c._id}" data-comment-id="${c._id}">
           <div class="comment-head-row">
-            <div class="comment-head">${userLink(c.user, name)} · ${formatDate(c.createdAt)}</div>
+            <div class="comment-head">${userLink(c.user, name)}${c.createdAt ? ` · ${formatDate(c.createdAt)}` : ''}</div>
             <div class="content-actions">
               ${
                 manage
@@ -338,7 +382,7 @@ async function loadComments(root, postId, user) {
       form.className = 'comment-edit-form form-stack';
       form.innerHTML = `
         <textarea name="body" required maxlength="2000" rows="3">${escapeHtml(current)}</textarea>
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <div class="form-row">
           <button type="submit" class="btn btn-primary">Save</button>
           <button type="button" class="btn btn-ghost" data-cancel-edit>Cancel</button>
         </div>

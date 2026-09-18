@@ -2,6 +2,7 @@ import { route, initRouter, renderCurrent, navigate, setAfterRender } from './ro
 import { refreshUser, clearUser, getUser } from './state.js';
 import { api } from './api.js';
 import { setPageSeo, loadAdSense } from './seo.js';
+import { escapeHtml, toast } from './ui.js';
 import { renderHome } from './pages/home.js';
 import { renderPost } from './pages/post.js';
 import {
@@ -40,27 +41,80 @@ import {
   renderTerms,
 } from './pages/static.js';
 
+function closeMobileNav() {
+  const toggle = document.getElementById('nav-toggle');
+  const panel = document.getElementById('header-panel');
+  if (!toggle || !panel) return;
+  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-label', 'Open menu');
+  panel.classList.remove('is-open');
+}
+
+function initHeaderChrome() {
+  const toggle = document.getElementById('nav-toggle');
+  const panel = document.getElementById('header-panel');
+  const header = document.querySelector('.site-header');
+  if (!toggle || !panel || toggle.dataset.bound) return;
+  toggle.dataset.bound = '1';
+
+  toggle.addEventListener('click', () => {
+    const open = toggle.getAttribute('aria-expanded') === 'true';
+    const next = !open;
+    toggle.setAttribute('aria-expanded', String(next));
+    toggle.setAttribute('aria-label', next ? 'Close menu' : 'Open menu');
+    panel.classList.toggle('is-open', next);
+  });
+
+  panel.addEventListener('click', (e) => {
+    if (e.target.closest('a[data-link], button')) closeMobileNav();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeMobileNav();
+  });
+
+  window.addEventListener(
+    'resize',
+    () => {
+      if (window.innerWidth > 720) closeMobileNav();
+    },
+    { passive: true }
+  );
+
+  if (header) {
+    const onScroll = () => {
+      header.classList.toggle('is-scrolled', window.scrollY > 8);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  }
+}
+
 function renderNav() {
   const nav = document.getElementById('nav-main');
   const actions = document.getElementById('header-actions');
   const user = getUser();
   const path = window.location.pathname;
+  const homeCurrent = path === '/';
+  const profileCurrent = path.startsWith('/profile');
+  const adminCurrent = path.startsWith('/admin');
 
   nav.innerHTML = `
-    <a href="/" data-link class="${path === '/' ? 'active' : ''}">Home</a>
-    ${user ? `<a href="/profile" data-link class="${path.startsWith('/profile') ? 'active' : ''}">Profile</a>` : ''}
-    ${user?.role === 'admin' ? `<a href="/admin" data-link class="${path.startsWith('/admin') ? 'active' : ''}">Admin</a>` : ''}
+    <a href="/" data-link class="${homeCurrent ? 'active' : ''}" ${homeCurrent ? 'aria-current="page"' : ''}>Home</a>
+    ${user ? `<a href="/profile" data-link class="${profileCurrent ? 'active' : ''}" ${profileCurrent ? 'aria-current="page"' : ''}>Profile</a>` : ''}
+    ${user?.role === 'admin' ? `<a href="/admin" data-link class="${adminCurrent ? 'active' : ''}" ${adminCurrent ? 'aria-current="page"' : ''}>Admin</a>` : ''}
   `;
 
   if (user) {
     actions.innerHTML = `
-      <a href="/users/${user._id}" data-link class="user-link muted" style="font-size:0.9rem">${escapeHtml(user.name)}</a>
+      <a href="/users/${user._id}" data-link class="user-link muted">${escapeHtml(user.name)}</a>
       <button type="button" class="btn btn-ghost" id="logout-btn">Log out</button>
     `;
     actions.querySelector('#logout-btn').addEventListener('click', async () => {
       await api.post('/auth/logout');
       clearUser();
       toast('Logged out');
+      closeMobileNav();
       renderNav();
       renderFooter();
       navigate('/');
@@ -186,7 +240,9 @@ function initClientErrorLogging() {
 
 async function boot() {
   initClientErrorLogging();
+  initHeaderChrome();
   setAfterRender(() => {
+    closeMobileNav();
     renderNav();
     renderFooter();
     trackPageLoad();

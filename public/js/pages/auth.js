@@ -7,7 +7,7 @@ import { setNoIndex } from '../seo.js';
 function authPanel(title, bodyHtml) {
   setNoIndex(title);
   return `
-    <div class="panel" style="max-width:480px;margin-inline:auto">
+    <div class="panel auth-panel">
       <h2>${escapeHtml(title)}</h2>
       ${bodyHtml}
     </div>

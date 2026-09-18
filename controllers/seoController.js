@@ -37,8 +37,8 @@ function siteConfigScript() {
 }
 
 function defaultSeo({
-  title = 'Swiftener — practical cheat sheets',
-  description = 'Practical cheat sheets for coding, terminals, and Microsoft Office — quick reference when you need it.',
+  title = 'Swiftener — practical How-to IT guides',
+  description = 'Clear, practical How-to guides on useful IT topics for beginners and intermediate readers.',
   path: pagePath = '/',
   image = '',
   type = 'website',
@@ -88,7 +88,7 @@ function websiteJsonLd() {
     '@type': 'WebSite',
     name: 'Swiftener',
     url: siteOrigin(),
-    description: 'Practical cheat sheets for coding, terminals, and Microsoft Office.',
+    description: 'Clear, practical How-to guides on useful IT topics for beginners and intermediate readers.',
     potentialAction: {
       '@type': 'SearchAction',
       target: `${siteOrigin()}/?q={search_term_string}`,
@@ -219,8 +219,8 @@ function sitemapXml(_req, res) {
 
 function sendHomeHtml(_req, res) {
   const head = defaultSeo({
-    title: 'Swiftener — practical cheat sheets',
-    description: 'Practical cheat sheets for coding, terminals, and Microsoft Office — quick reference when you need it.',
+    title: 'Swiftener — practical How-to IT guides',
+    description: 'Clear, practical How-to guides on useful IT topics for beginners and intermediate readers.',
     path: '/',
     jsonLd: [websiteJsonLd(), organizationJsonLd()],
   });
@@ -292,7 +292,7 @@ function sendSpaHtml(req, res) {
     /^\/(admin|profile|login|register|forgot-password|reset-password|verify-email)/.test(req.path);
   const head = defaultSeo({
     title: 'Swiftener',
-    description: 'Practical cheat sheets for coding, terminals, and Microsoft Office.',
+    description: 'Clear, practical How-to guides on useful IT topics for beginners and intermediate readers.',
     path: req.path || '/',
     noindex,
   });

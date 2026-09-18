@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0d9488" />
+    <meta name="theme-color" content="#eaf1ef" />
     <meta name="color-scheme" content="light" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
@@ -18,19 +18,32 @@
     <link rel="stylesheet" href="/css/app.css" />
   </head>
   <body>
+    <a class="skip-link" href="#app">Skip to content</a>
     <div class="ambient" aria-hidden="true"></div>
     <header class="site-header">
       <div class="container header-inner">
         <a href="/" class="brand" data-link>Swiftener</a>
-        <nav class="nav-main" id="nav-main" aria-label="Primary"></nav>
-        <div class="header-actions" id="header-actions"></div>
+        <button
+          type="button"
+          class="nav-toggle"
+          id="nav-toggle"
+          aria-expanded="false"
+          aria-controls="header-panel"
+          aria-label="Open menu"
+        >
+          <span class="nav-toggle-bars" aria-hidden="true"></span>
+        </button>
+        <div class="header-panel" id="header-panel">
+          <nav class="nav-main" id="nav-main" aria-label="Primary"></nav>
+          <div class="header-actions" id="header-actions"></div>
+        </div>
       </div>
     </header>
     <main id="app" class="container main" tabindex="-1"></main>
     <!--PRERENDER-->
     <footer class="site-footer">
       <div class="container footer-shell">
-        <p class="footer-tagline">Practical cheat sheets for developers and everyday software — code, terminals, and Microsoft Office.</p>
+        <p class="footer-tagline">Clear, practical How-to guides on useful IT topics for beginners and intermediate readers.</p>
         <div class="footer-columns">
           <nav class="footer-nav" id="footer-nav" aria-label="Site">
             <a href="/" data-link>Home</a>
@@ -45,7 +58,7 @@
             <a href="/terms" data-link>Terms of Use</a>
           </nav>
         </div>
-        <p class="footer-copy">© <span id="footer-year">2026</span> Swiftener. Quick-reference guides for learners and practitioners.</p>
+        <p class="footer-copy">© <span id="footer-year">2026</span> Swiftener. Practical How-to guides for learners and practitioners.</p>
       </div>
     </footer>
     <div id="toast-root" class="toast-root" aria-live="polite"></div>

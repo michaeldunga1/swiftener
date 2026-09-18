@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/commentController');
-const { requireAuth, requireActiveForEngagement } = require('../middleware/auth');
+const { requireAuth, requireActiveForEngagement, attachUserIfPresent } = require('../middleware/auth');
 
-router.get('/:postId', ctrl.listComments); // public read
+router.get('/:postId', attachUserIfPresent, ctrl.listComments); // public read
 router.post('/:postId', requireAuth, requireActiveForEngagement, ctrl.createComment);
 router.put('/:id', requireAuth, requireActiveForEngagement, ctrl.updateComment);
 router.delete('/:id', requireAuth, ctrl.deleteComment);

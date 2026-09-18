@@ -1,13 +1,30 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+function readToken(req) {
+  const cookieName = process.env.COOKIE_NAME || 'sw_token';
+  return (
+    req.cookies?.[cookieName] ||
+    (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null)
+  );
+}
+
+function getUserFromRequest(req) {
+  const token = readToken(req);
+  if (!token) return null;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = User.findById(decoded.id);
+    if (!user || user.isBlocked) return null;
+    return user;
+  } catch {
+    return null;
+  }
+}
+
 async function requireAuth(req, res, next) {
   try {
-    const cookieName = process.env.COOKIE_NAME || 'sw_token';
-    const token =
-      req.cookies?.[cookieName] ||
-      (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null);
-
+    const token = readToken(req);
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -24,14 +41,8 @@ async function requireAuth(req, res, next) {
 
 async function attachUserIfPresent(req, res, next) {
   try {
-    const cookieName = process.env.COOKIE_NAME || 'sw_token';
-    const token =
-      req.cookies?.[cookieName] ||
-      (req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : null);
-    if (!token) return next();
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = User.findById(decoded.id);
-    if (user && !user.isBlocked) req.user = user;
+    const user = getUserFromRequest(req);
+    if (user) req.user = user;
     next();
   } catch {
     next();
@@ -52,4 +63,10 @@ function requireActiveForEngagement(req, res, next) {
   next();
 }
 
-module.exports = { requireAuth, attachUserIfPresent, requireAdmin, requireActiveForEngagement };
+module.exports = {
+  getUserFromRequest,
+  requireAuth,
+  attachUserIfPresent,
+  requireAdmin,
+  requireActiveForEngagement,
+};

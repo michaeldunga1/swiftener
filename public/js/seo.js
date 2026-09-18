@@ -1,5 +1,5 @@
 const DEFAULT_DESCRIPTION =
-  'Practical cheat sheets for coding, terminals, and Microsoft Office.';
+  'Clear, practical How-to guides on useful IT topics for beginners and intermediate readers.';
 
 function upsertMeta(attr, key, content) {
   if (content == null || content === '') return;

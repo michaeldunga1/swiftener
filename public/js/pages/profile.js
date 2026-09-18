@@ -52,16 +52,16 @@ export async function renderPublicProfile(root, { id }) {
 
   root.innerHTML = `
     <div class="panel">
-      <p class="muted" style="margin:0 0 0.35rem">Profile</p>
+      <p class="muted profile-eyebrow">Profile</p>
       <h1 class="profile-name">${escapeHtml(profile.name || 'User')}</h1>
       ${profile.bio ? `<p>${escapeHtml(profile.bio)}</p>` : '<p class="muted">No bio yet.</p>'}
-      <p class="muted">Member since ${formatDate(profile.createdAt)}</p>
+      ${profile.createdAt ? `<p class="muted">Member since ${formatDate(profile.createdAt)}</p>` : ''}
       ${
         profile.avatar
-          ? `<p style="margin-top:1rem"><img src="${escapeHtml(profile.avatar)}" alt="" class="profile-avatar" width="96" height="96" /></p>`
+          ? `<p class="profile-avatar-wrap"><img src="${escapeHtml(profile.avatar)}" alt="" class="profile-avatar" width="96" height="96" /></p>`
           : ''
       }
-      ${isSelf ? `<p style="margin-top:1.25rem"><a href="/profile" data-link class="btn btn-primary">Edit your profile</a></p>` : ''}
+      ${isSelf ? `<p class="profile-actions"><a href="/profile" data-link class="btn btn-primary">Edit your profile</a></p>` : ''}
     </div>
   `;
 }
@@ -76,7 +76,7 @@ export async function renderProfile(root) {
       <h2>${userLink(user, user.name)}</h2>
       <p class="muted">${userLink(user, user.email)} · ${user.role}</p>
       <p class="muted"><a href="/users/${user._id}" data-link>View public profile</a></p>
-      <form id="profile-form" class="form-stack" style="max-width:100%;margin-top:1rem">
+      <form id="profile-form" class="form-stack form-wide form-spaced">
         <label>Name<input name="name" value="${escapeHtml(user.name)}" required /></label>
         <label>Bio<textarea name="bio" maxlength="500">${escapeHtml(user.bio || '')}</textarea></label>
         <label>Avatar URL<input name="avatar" value="${escapeHtml(user.avatar || '')}" placeholder="https://…" /></label>
@@ -93,12 +93,12 @@ export async function renderProfile(root) {
     </div>
     <div class="panel">
       <h3>Newsletter</h3>
-      <p class="muted">Get occasional new cheat sheets and guide updates by email.</p>
+      <p class="muted">Get occasional new How-to guides and updates by email.</p>
       <form id="profile-newsletter-form" class="form-stack">
         <label>Email<input type="email" name="email" value="${escapeHtml(user.email || '')}" required /></label>
         <button type="submit" class="btn btn-primary">Subscribe</button>
       </form>
-      <p class="muted" style="margin-top:0.75rem"><a href="/newsletter" data-link>Open newsletter page</a></p>
+      <p class="muted form-follow"><a href="/newsletter" data-link>Open newsletter page</a></p>
     </div>
   `;
 
@@ -178,11 +178,11 @@ export async function renderNotifications(root) {
   root.innerHTML = `
     ${profileTabs('profile/notifications')}
     <div class="panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-        <h2 style="margin:0">Notifications</h2>
+      <div class="panel-toolbar">
+        <h2>Notifications</h2>
         <button type="button" class="btn btn-ghost" id="read-all">Mark all read (${data.unreadCount ?? 0} unread)</button>
       </div>
-      <div id="notif-list" style="margin-top:1rem"></div>
+      <div id="notif-list" class="notif-list"></div>
     </div>
   `;
   const list = root.querySelector('#notif-list');
@@ -192,8 +192,8 @@ export async function renderNotifications(root) {
     list.innerHTML = data.notifications
       .map(
         (n) => `
-      <div class="comment" style="opacity:${n.isRead ? 0.75 : 1}">
-        <div class="comment-head">${formatDate(n.createdAt)} · ${escapeHtml(n.type)}</div>
+      <div class="comment${n.isRead ? ' is-read' : ''}">
+        <div class="comment-head">${n.createdAt ? `${formatDate(n.createdAt)} · ` : ''}${escapeHtml(n.type)}</div>
         <p>${escapeHtml(n.message)}</p>
         ${n.link ? `<a href="${escapeHtml(n.link.startsWith('/') ? n.link : `/posts${n.link}`)}" data-link>View</a>` : ''}
         ${!n.isRead ? `<button type="button" class="btn btn-ghost" data-read="${n._id}">Mark read</button>` : ''}

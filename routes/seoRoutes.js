@@ -11,19 +11,23 @@ function mountSeoRoutes(app) {
     seo.sendStaticPageHtml(
       '/about',
       'About',
-      'About Swiftener — practical cheat sheets for coding, terminals, and Microsoft Office.'
+      'About Swiftener — clear, practical How-to guides on useful IT topics for beginners and intermediate readers.'
     )
   );
   app.get(
     '/contact',
-    seo.sendStaticPageHtml('/contact', 'Contact', 'Contact Swiftener about cheat sheets, corrections, or account help.')
+    seo.sendStaticPageHtml(
+      '/contact',
+      'Contact',
+      'Contact Swiftener about guides, corrections, or account help.'
+    )
   );
   app.get(
     '/privacy',
     seo.sendStaticPageHtml(
       '/privacy',
       'Privacy Policy',
-      'How Swiftener collects and uses data when you read cheat sheets, comment, or view ads.'
+      'How Swiftener collects and uses data when you read guides, comment, or view ads.'
     )
   );
   app.get(
@@ -31,7 +35,7 @@ function mountSeoRoutes(app) {
     seo.sendStaticPageHtml(
       '/terms',
       'Terms of Use',
-      'Terms for using Swiftener’s cheat sheets, comments, and related services.'
+      'Terms for using Swiftener’s guides, comments, and related services.'
     )
   );
   app.get(
@@ -39,7 +43,7 @@ function mountSeoRoutes(app) {
     seo.sendStaticPageHtml(
       '/newsletter',
       'Newsletter',
-      'Subscribe for new Swiftener cheat sheets and guide updates.'
+      'Subscribe for new Swiftener How-to guides and updates.'
     )
   );
 
