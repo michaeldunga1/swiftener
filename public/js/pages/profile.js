@@ -55,7 +55,7 @@ export async function renderPublicProfile(root, { id }) {
       <p class="muted profile-eyebrow">Profile</p>
       <h1 class="profile-name">${escapeHtml(profile.name || 'User')}</h1>
       ${profile.bio ? `<p>${escapeHtml(profile.bio)}</p>` : '<p class="muted">No bio yet.</p>'}
-      ${profile.createdAt ? `<p class="muted">Member since ${formatDate(profile.createdAt)}</p>` : ''}
+      ${me?.role === 'admin' && profile.createdAt ? `<p class="muted">Member since ${formatDate(profile.createdAt)}</p>` : ''}
       ${
         profile.avatar
           ? `<p class="profile-avatar-wrap"><img src="${escapeHtml(profile.avatar)}" alt="" class="profile-avatar" width="96" height="96" /></p>`

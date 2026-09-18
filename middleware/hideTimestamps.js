@@ -1,6 +1,12 @@
 const { getUserFromRequest } = require('./auth');
 
-const TIMESTAMP_KEYS = new Set(['createdAt', 'updatedAt', 'created_at', 'updated_at']);
+const TIMESTAMP_KEYS = new Set([
+  'createdAt',
+  'updatedAt',
+  'created_at',
+  'updated_at',
+  'memberSince',
+]);
 
 function stripTimestampsDeep(value) {
   if (Array.isArray(value)) return value.map(stripTimestampsDeep);

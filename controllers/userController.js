@@ -20,15 +20,16 @@ async function getPublicProfile(req, res, next) {
   try {
     const user = User.findById(req.params.id);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({
-      user: {
-        _id: user._id,
-        name: user.name,
-        avatar: user.avatar,
-        bio: user.bio,
-        createdAt: user.createdAt,
-      },
-    });
+    const payload = {
+      _id: user._id,
+      name: user.name,
+      avatar: user.avatar,
+      bio: user.bio,
+    };
+    if (req.user?.role === 'admin') {
+      payload.createdAt = user.createdAt;
+    }
+    res.json({ user: payload });
   } catch (err) {
     next(err);
   }
