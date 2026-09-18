@@ -5,6 +5,7 @@ const { requireAuth, requireAdmin, attachUserIfPresent } = require('../middlewar
 
 // Public
 router.get('/', ctrl.listPosts);
+router.get('/meta/facets', ctrl.listFacets);
 
 // Admin only — must be before /:slug so "admin" is not treated as a slug
 router.get('/admin/drafts', requireAuth, requireAdmin, ctrl.listDrafts);

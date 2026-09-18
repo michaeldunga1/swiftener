@@ -1,5 +1,13 @@
 import { api, ApiError } from '../api.js';
-import { escapeHtml, formatDate, toast, userLink, postPath, renderTagLinks, tagSlug } from '../ui.js';
+import {
+  escapeHtml,
+  formatDate,
+  toast,
+  userLink,
+  postPath,
+  renderTagLinks,
+  tagSlug,
+} from '../ui.js';
 import { getUser } from '../state.js';
 import { htmlForPostBody } from '../markdown.js';
 import { navigate } from '../router.js';
@@ -19,10 +27,91 @@ function expectedTag(post) {
   return tagSlug((post.tags && post.tags[0]) || post.category || 'general');
 }
 
+function ensureHeadingIds(root, toc = []) {
+  const headings = [...root.querySelectorAll('h2, h3')];
+  if (toc.length && toc.length === headings.length) {
+    headings.forEach((el, i) => {
+      el.id = toc[i].id;
+    });
+    return;
+  }
+  const used = new Map();
+  headings.forEach((el) => {
+    if (el.id) return;
+    let id = tagSlug(el.textContent || 'section');
+    const n = used.get(id) || 0;
+    used.set(id, n + 1);
+    if (n) id = `${id}-${n}`;
+    el.id = id;
+  });
+}
+
+function buildTocHtml(toc) {
+  if (!toc?.length) return '';
+  return `
+    <nav class="post-toc panel" aria-label="Table of contents">
+      <h2>On this page</h2>
+      <ol>
+        ${toc
+          .map(
+            (item) =>
+              `<li class="toc-level-${item.level}"><a href="#${escapeHtml(item.id)}">${escapeHtml(item.text)}</a></li>`
+          )
+          .join('')}
+      </ol>
+    </nav>`;
+}
+
+function relatedHtml(related) {
+  if (!related?.length) return '';
+  return `
+    <section class="related-posts panel">
+      <h2>Related posts</h2>
+      <div class="card-grid related-grid">
+        ${related
+          .map(
+            (p) => `
+          <article class="post-card">
+            ${p.coverImage ? `<a href="${postPath(p)}" data-link class="post-card-cover"><img src="${escapeHtml(p.coverImage)}" alt="" loading="lazy" /></a>` : ''}
+            <p class="post-meta">${escapeHtml(p.category || '')}</p>
+            <h3><a href="${postPath(p)}" data-link>${escapeHtml(p.title)}</a></h3>
+          </article>`
+          )
+          .join('')}
+      </div>
+    </section>`;
+}
+
+function initReadingProgress(articleRoot) {
+  document.querySelectorAll('.reading-progress').forEach((el) => el.remove());
+  const bar = document.createElement('div');
+  bar.className = 'reading-progress';
+  bar.setAttribute('aria-hidden', 'true');
+  bar.innerHTML = '<div class="reading-progress-bar"></div>';
+  document.body.appendChild(bar);
+  const fill = bar.querySelector('.reading-progress-bar');
+
+  const onScroll = () => {
+    const rect = articleRoot.getBoundingClientRect();
+    const total = Math.max(1, articleRoot.scrollHeight - window.innerHeight);
+    const scrolled = Math.min(total, Math.max(0, -rect.top));
+    fill.style.width = `${(scrolled / total) * 100}%`;
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  return () => {
+    window.removeEventListener('scroll', onScroll);
+    bar.remove();
+  };
+}
+
 export async function renderPost(root, { slug, tag } = {}) {
   const data = await api.get(`/posts/${encodeURIComponent(slug)}`);
   const post = data.post;
   const viewer = data.viewerState || {};
+  const reading = data.reading || { minutes: 1 };
+  const toc = data.toc || [];
+  const related = data.related || [];
   const user = getUser();
   const authorLabel = post.author?.name || 'Author';
   const isAdmin = user?.role === 'admin';
@@ -37,10 +126,10 @@ export async function renderPost(root, { slug, tag } = {}) {
   }
 
   root.innerHTML = `
-    <article>
+    <article class="post-layout" id="post-article">
       <header class="article-header panel">
         <div class="article-header-top">
-          <p class="post-meta">${escapeHtml(post.category)} · ${formatDate(post.publishedAt)} · ${userLink(post.author, authorLabel)}</p>
+          <p class="post-meta">${escapeHtml(post.category)} · ${formatDate(post.publishedAt)} · ${userLink(post.author, authorLabel)} · ${reading.minutes} min read</p>
           ${
             isAdmin
               ? `<div class="content-actions">
@@ -51,6 +140,7 @@ export async function renderPost(root, { slug, tag } = {}) {
           }
         </div>
         <h1>${escapeHtml(post.title)}</h1>
+        ${post.coverImage ? `<img class="post-cover" src="${escapeHtml(post.coverImage)}" alt="" />` : ''}
         <div class="tag-row" style="margin:0.5rem 0 0.75rem">${renderTagLinks(post.tags)}</div>
         <p class="muted">${post.viewsCount ?? 0} views · ${post.likesCount ?? 0} likes · ${post.commentsCount ?? 0} comments</p>
         <div class="engagement-bar" id="engagement-bar">
@@ -60,7 +150,11 @@ export async function renderPost(root, { slug, tag } = {}) {
           <button type="button" class="btn btn-ghost" data-action="share">Share</button>
         </div>
       </header>
-      <div class="panel article-body" id="article-body"><p class="muted">Loading…</p></div>
+      <div class="post-main">
+        ${buildTocHtml(toc)}
+        <div class="panel article-body" id="article-body"><p class="muted">Loading…</p></div>
+      </div>
+      ${relatedHtml(related)}
       <section class="comments panel">
         <h2>Comments</h2>
         <div id="comment-list"></div>
@@ -84,6 +178,10 @@ export async function renderPost(root, { slug, tag } = {}) {
   } catch {
     bodyEl.textContent = post.body || '';
   }
+  ensureHeadingIds(bodyEl, toc);
+
+  const cleanupProgress = initReadingProgress(root.querySelector('#post-article'));
+  root._cleanup = cleanupProgress;
 
   api.post(`/posts/${post._id}/view`).catch(() => {});
 

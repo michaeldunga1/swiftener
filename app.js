@@ -15,8 +15,11 @@ const userRoutes = require('./routes/userRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
+const { ensureUploadDir, UPLOAD_ROOT } = require('./utils/upload');
 
 connectDB();
+ensureUploadDir();
 
 const app = express();
 
@@ -24,7 +27,7 @@ if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '4mb' }));
 app.use(cookieParser());
 
 // Mount this router tree under whatever base path fits your existing Swiftener app,
@@ -41,6 +44,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/uploads', uploadRoutes);
+app.use('/uploads', express.static(UPLOAD_ROOT));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
@@ -48,7 +53,7 @@ app.get('/healthz', (req, res) => res.json({ status: 'ok' }));
 const publicDir = path.join(__dirname, 'public');
 app.use(express.static(publicDir));
 app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/auth/')) return next();
+  if (req.path.startsWith('/api') || req.path.startsWith('/auth/') || req.path.startsWith('/uploads/')) return next();
   res.sendFile(path.join(publicDir, 'index.html'));
 });
 

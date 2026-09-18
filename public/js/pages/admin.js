@@ -19,6 +19,7 @@ function adminNav(active) {
     ['admin/analytics', 'Analytics'],
     ['admin/drafts', 'Drafts'],
     ['admin/posts/new', 'Create post'],
+    ['admin/newsletter', 'Newsletter'],
     ['admin/users', 'Users'],
     ['admin/reports', 'Reports'],
   ];
@@ -37,6 +38,15 @@ function cellValue(value) {
     return `<details><summary>${escapeHtml(text.slice(0, 80))}…</summary><pre style="white-space:pre-wrap;font-size:0.75rem;max-height:200px;overflow:auto">${escapeHtml(text)}</pre></details>`;
   }
   return escapeHtml(text);
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.readAsDataURL(file);
+  });
 }
 
 export async function renderAdminDashboard(root) {
@@ -145,7 +155,17 @@ export async function renderAdminPostEditor(root, { id } = {}) {
         <label>Tags <span class="hint">comma-separated</span>
           <input name="tags" value="${escapeHtml((post?.tags || []).join(', '))}" /></label>
         <label>Excerpt<textarea name="excerpt">${escapeHtml(post?.excerpt || '')}</textarea></label>
-        <label>Cover image URL<input name="coverImage" value="${escapeHtml(post?.coverImage || '')}" /></label>
+        <label>Cover image URL
+          <input id="cover-image-url" name="coverImage" value="${escapeHtml(post?.coverImage || '')}" placeholder="https://… or upload below" />
+        </label>
+        <div class="cover-upload">
+          <input type="file" id="cover-file" accept="image/jpeg,image/png,image/webp,image/gif" />
+          <button type="button" class="btn btn-ghost" id="cover-upload-btn">Upload cover</button>
+          <span class="hint muted" id="cover-upload-status"></span>
+        </div>
+        <div id="cover-preview-wrap" ${post?.coverImage ? '' : 'hidden'}>
+          <img id="cover-preview" class="cover-preview" src="${escapeHtml(post?.coverImage || '')}" alt="" />
+        </div>
         <label>Body (Markdown)<textarea name="body" required style="min-height:220px">${escapeHtml(post?.body || '')}</textarea></label>
         <label>Status
           <select name="status">
@@ -160,6 +180,47 @@ export async function renderAdminPostEditor(root, { id } = {}) {
       </form>
     </div>
   `;
+
+  const coverInput = root.querySelector('#cover-image-url');
+  const preview = root.querySelector('#cover-preview');
+  const previewWrap = root.querySelector('#cover-preview-wrap');
+  const syncPreview = () => {
+    const url = coverInput.value.trim();
+    if (url) {
+      preview.src = url;
+      previewWrap.hidden = false;
+    } else {
+      previewWrap.hidden = true;
+      preview.removeAttribute('src');
+    }
+  };
+  coverInput.addEventListener('change', syncPreview);
+  coverInput.addEventListener('input', syncPreview);
+
+  root.querySelector('#cover-upload-btn')?.addEventListener('click', async () => {
+    const file = root.querySelector('#cover-file')?.files?.[0];
+    const status = root.querySelector('#cover-upload-status');
+    if (!file) {
+      toast('Choose an image first', { error: true });
+      return;
+    }
+    if (file.size > 2.5 * 1024 * 1024) {
+      toast('Image must be under 2.5MB', { error: true });
+      return;
+    }
+    status.textContent = 'Uploading…';
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const res = await api.post('/uploads', { dataUrl });
+      coverInput.value = res.url;
+      syncPreview();
+      status.textContent = 'Uploaded';
+      toast('Cover uploaded');
+    } catch (err) {
+      status.textContent = '';
+      toast(err.message, { error: true });
+    }
+  });
 
   root.querySelector('#post-editor').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -191,6 +252,44 @@ export async function renderAdminPostEditor(root, { id } = {}) {
         if (res.post?.slug) navigate(postPath(res.post));
         else navigate('/admin/drafts');
       }
+    } catch (err) {
+      toast(err.message, { error: true });
+    }
+  });
+}
+
+export async function renderAdminNewsletter(root) {
+  if (!requireAdmin(root)) return;
+  const data = await api.get('/newsletter/subscribers').catch(() => ({ subscribers: [], total: 0 }));
+  const verified = (data.subscribers || []).filter((s) => s.isVerified).length;
+
+  root.innerHTML = `
+    ${adminNav('admin/newsletter')}
+    <div class="panel">
+      <h2>Newsletter</h2>
+      <p class="muted">${verified} verified · ${data.total ?? 0} active subscribers</p>
+      <form id="newsletter-send" class="form-stack" style="max-width:100%;margin-top:1rem">
+        <label>Subject<input name="subject" required maxlength="200" placeholder="This week on Swiftener" /></label>
+        <label>Body (Markdown)
+          <textarea name="body" required style="min-height:220px" placeholder="Write the email in Markdown…"></textarea>
+        </label>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button type="submit" class="btn btn-primary">Send to subscribers</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  root.querySelector('#newsletter-send').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!window.confirm(`Send this newsletter to ${verified} verified subscribers?`)) return;
+    const fd = new FormData(e.target);
+    try {
+      const res = await api.post('/newsletter/send', {
+        subject: fd.get('subject'),
+        body: fd.get('body'),
+      });
+      toast(res.message || 'Sent');
     } catch (err) {
       toast(err.message, { error: true });
     }

@@ -44,6 +44,13 @@ const sendNewsletterVerifyEmail = (to, verifyUrl) =>
     html: `<p><a href="${verifyUrl}">Click here to confirm</a> your subscription to the Swiftener newsletter.</p>`,
   });
 
+const sendNewsletterBlast = (to, { subject, html, unsubscribeUrl }) =>
+  sendMail({
+    to,
+    subject,
+    html: `${html}<hr style="margin:2rem 0;border:none;border-top:1px solid #ddd" /><p style="font-size:12px;color:#666"><a href="${unsubscribeUrl}">Unsubscribe</a></p>`,
+  });
+
 const sendNewNotificationEmail = (to, message, link) =>
   sendMail({
     to,
@@ -57,5 +64,6 @@ module.exports = {
   sendVerifyEmail,
   sendInviteEmail,
   sendNewsletterVerifyEmail,
+  sendNewsletterBlast,
   sendNewNotificationEmail,
 };

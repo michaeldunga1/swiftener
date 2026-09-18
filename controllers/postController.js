@@ -1,7 +1,8 @@
 const Post = require('../models/Post');
 const Interaction = require('../models/Interaction');
 const { generateUniqueSlug } = require('../utils/slugify');
-const { renderMarkdown } = require('../utils/markdown');
+const { renderMarkdown, extractToc } = require('../utils/markdown');
+const { readingStats } = require('../utils/reading');
 
 async function createPost(req, res, next) {
   try {
@@ -91,6 +92,14 @@ async function listPosts(req, res, next) {
   }
 }
 
+async function listFacets(req, res, next) {
+  try {
+    res.json(Post.listFacets());
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function listDrafts(req, res, next) {
   try {
     const posts = Post.listDrafts();
@@ -111,6 +120,9 @@ async function getPostBySlug(req, res, next) {
     }
 
     post.renderedBody = renderMarkdown(post.body);
+    const reading = readingStats(post.body);
+    const toc = extractToc(post.body);
+    const related = Post.findRelated(post, 4);
 
     let viewerState = { liked: false, saved: false, bookmarked: false };
     if (req.user) {
@@ -122,7 +134,7 @@ async function getPostBySlug(req, res, next) {
       };
     }
 
-    res.json({ post, viewerState });
+    res.json({ post, viewerState, reading, toc, related });
   } catch (err) {
     next(err);
   }
@@ -138,4 +150,13 @@ async function getAdminPost(req, res, next) {
   }
 }
 
-module.exports = { createPost, updatePost, deletePost, listPosts, listDrafts, getPostBySlug, getAdminPost };
+module.exports = {
+  createPost,
+  updatePost,
+  deletePost,
+  listPosts,
+  listFacets,
+  listDrafts,
+  getPostBySlug,
+  getAdminPost,
+};

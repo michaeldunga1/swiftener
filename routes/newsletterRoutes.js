@@ -7,5 +7,6 @@ router.post('/subscribe', attachUserIfPresent, ctrl.subscribe);
 router.get('/verify', ctrl.verifySubscription);
 router.get('/unsubscribe', ctrl.unsubscribe);
 router.get('/subscribers', requireAuth, requireAdmin, ctrl.listSubscribers);
+router.post('/send', requireAuth, requireAdmin, ctrl.sendNewsletter);
 
 module.exports = router;

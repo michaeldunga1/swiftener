@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const NewsletterSubscriber = require('../models/NewsletterSubscriber');
-const { sendNewsletterVerifyEmail } = require('../utils/email');
+const { sendNewsletterVerifyEmail, sendNewsletterBlast } = require('../utils/email');
+const { renderMarkdown } = require('../utils/markdown');
 
 async function subscribe(req, res, next) {
   try {
@@ -70,4 +71,46 @@ async function listSubscribers(req, res, next) {
   }
 }
 
-module.exports = { subscribe, verifySubscription, unsubscribe, listSubscribers };
+async function sendNewsletter(req, res, next) {
+  try {
+    const subject = String(req.body?.subject || '').trim();
+    const body = String(req.body?.body || '').trim();
+    if (!subject || !body) return res.status(400).json({ error: 'Subject and body are required' });
+
+    const html = renderMarkdown(body);
+    const recipients = NewsletterSubscriber.listVerifiedActive({ includeSecrets: true });
+    if (!recipients.length) {
+      return res.status(400).json({ error: 'No verified subscribers yet' });
+    }
+
+    const base = process.env.FRONTEND_URL || '';
+    let sent = 0;
+    const errors = [];
+    for (const sub of recipients) {
+      try {
+        const unsubscribeUrl = `${base}/newsletter/unsubscribe?token=${encodeURIComponent(sub.unsubscribeToken || '')}`;
+        await sendNewsletterBlast(sub.email, { subject, html, unsubscribeUrl });
+        sent += 1;
+      } catch (err) {
+        errors.push({ email: sub.email, error: err.message });
+      }
+    }
+
+    res.json({
+      message: `Sent to ${sent} of ${recipients.length} subscribers`,
+      sent,
+      total: recipients.length,
+      errors,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  subscribe,
+  verifySubscription,
+  unsubscribe,
+  listSubscribers,
+  sendNewsletter,
+};

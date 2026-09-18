@@ -81,6 +81,16 @@ const NewsletterSubscriber = {
       .all()
       .map((r) => mapSubscriber(r));
   },
+
+  listVerifiedActive({ includeSecrets = false } = {}) {
+    return getDb()
+      .prepare(
+        `SELECT * FROM newsletter_subscribers
+         WHERE is_active = 1 AND is_verified = 1`
+      )
+      .all()
+      .map((r) => mapSubscriber(r, { includeSecrets }));
+  },
 };
 
 module.exports = NewsletterSubscriber;

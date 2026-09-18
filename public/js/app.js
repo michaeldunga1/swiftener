@@ -21,6 +21,7 @@ import {
   renderAdminDashboard,
   renderAdminDrafts,
   renderAdminPostEditor,
+  renderAdminNewsletter,
   renderAdminUsers,
   renderAdminReports,
   renderAdminAnalytics,
@@ -120,6 +121,7 @@ route(/^\/admin\/database$/, renderAdminDatabase);
 route(/^\/admin\/drafts$/, renderAdminDrafts);
 route(/^\/admin\/posts\/new$/, (root) => renderAdminPostEditor(root, {}));
 route(/^\/admin\/posts\/edit\/(?<id>\d+)$/, (root, params) => renderAdminPostEditor(root, params));
+route(/^\/admin\/newsletter$/, renderAdminNewsletter);
 route(/^\/admin\/users$/, renderAdminUsers);
 route(/^\/admin\/reports$/, renderAdminReports);
 route(/^\/about$/, renderAbout);

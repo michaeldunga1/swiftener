@@ -30,6 +30,7 @@ export async function navigate(path, { replace = false } = {}) {
 
 export async function renderCurrent() {
   const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+  document.querySelectorAll('.reading-progress').forEach((el) => el.remove());
   const match = matchPath(pathname);
   const app = document.getElementById('app');
   if (!app) return;

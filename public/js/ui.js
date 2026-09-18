@@ -40,6 +40,20 @@ export function renderTagLinks(tags) {
     .join('');
 }
 
+/** Escape and wrap case-insensitive matches of `query` in <mark>. */
+export function highlightMatch(text, query) {
+  const source = String(text ?? '');
+  const q = String(query ?? '').trim();
+  if (!q) return escapeHtml(source);
+  const escaped = escapeHtml(source);
+  const safeQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  try {
+    return escaped.replace(new RegExp(`(${safeQ})`, 'ig'), '<mark>$1</mark>');
+  } catch {
+    return escaped;
+  }
+}
+
 /** Link a name, username, or email to `/users/:id`. Falls back to plain text if no id. */
 export function userLink(user, label) {
   const id = user != null && typeof user === 'object' ? user._id : user;

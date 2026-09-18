@@ -234,6 +234,58 @@ const Post = {
       .all(Number(limit))
       .map((r) => mapPost(r));
   },
+
+  findRelated(post, limit = 4) {
+    if (!post?._id) return [];
+    const tags = Array.isArray(post.tags) ? post.tags.filter(Boolean) : [];
+    const tagScoreSql = tags.length
+      ? `+ (
+           SELECT COUNT(*) FROM json_each(p.tags) je
+           WHERE lower(je.value) IN (${tags.map(() => 'lower(?)').join(',')})
+         )`
+      : '';
+    const rows = getDb()
+      .prepare(
+        `SELECT p.*, u.name AS author_name, u.avatar AS author_avatar,
+           (
+             CASE WHEN lower(p.category) = lower(?) THEN 3 ELSE 0 END
+             ${tagScoreSql}
+           ) AS score
+         FROM posts p
+         JOIN users u ON u.id = p.author_id
+         WHERE p.status = 'published' AND p.id != ?
+         ORDER BY score DESC, p.published_at DESC
+         LIMIT ?`
+      )
+      .all(post.category || '', ...tags, post._id, Number(limit));
+
+    return rows
+      .filter((r) => Number(r.score) > 0)
+      .map((row) => mapPost(row, { author: authorSnippet(row) }));
+  },
+
+  listFacets() {
+    const categories = getDb()
+      .prepare(
+        `SELECT category AS label, COUNT(*) AS count
+         FROM posts WHERE status = 'published' AND category != ''
+         GROUP BY lower(category)
+         ORDER BY count DESC, category ASC
+         LIMIT 24`
+      )
+      .all();
+    const tags = getDb()
+      .prepare(
+        `SELECT lower(je.value) AS label, COUNT(*) AS count
+         FROM posts p, json_each(p.tags) je
+         WHERE p.status = 'published' AND trim(je.value) != ''
+         GROUP BY lower(je.value)
+         ORDER BY count DESC, label ASC
+         LIMIT 40`
+      )
+      .all();
+    return { categories, tags };
+  },
 };
 
 module.exports = Post;
