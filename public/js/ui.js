@@ -34,8 +34,11 @@ export function tagFilterHref(tag) {
   const t = String(tag || '')
     .trim()
     .replace(/^#+/, '')
-    .toLowerCase();
-  if (!t) return '/';
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 32);
+  if (!t || t.length < 2) return '/';
   return `/tags/${encodeURIComponent(t)}`;
 }
 

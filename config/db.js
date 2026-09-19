@@ -207,6 +207,39 @@ function migrate(database) {
   if (!plNames.has('is_bot')) database.exec(`ALTER TABLE page_loads ADD COLUMN is_bot INTEGER NOT NULL DEFAULT 0`);
   database.exec('CREATE INDEX IF NOT EXISTS idx_page_loads_country ON page_loads(country)');
   database.exec('CREATE INDEX IF NOT EXISTS idx_page_loads_is_bot ON page_loads(is_bot)');
+
+  backfillPostHashtags(database);
+}
+
+/** Merge #hashtags from post bodies into the tags JSON for older posts. */
+function backfillPostHashtags(database) {
+  try {
+    const { resolvePostHashtags } = require('../utils/hashtags');
+    const rows = database.prepare('SELECT id, tags, body FROM posts').all();
+    const update = database.prepare('UPDATE posts SET tags = ? WHERE id = ?');
+    let changed = 0;
+    const tx = database.transaction((items) => {
+      for (const row of items) {
+        let tags = [];
+        try {
+          tags = JSON.parse(row.tags || '[]');
+        } catch {
+          tags = [];
+        }
+        if (!Array.isArray(tags)) tags = [];
+        const next = resolvePostHashtags(tags, row.body || '');
+        const prevKey = JSON.stringify(tags.map((t) => String(t || '').toLowerCase()));
+        const nextKey = JSON.stringify(next);
+        if (prevKey === nextKey) continue;
+        update.run(JSON.stringify(next), row.id);
+        changed += 1;
+      }
+    });
+    tx(rows);
+    if (changed) console.log(`[db] Backfilled hashtags on ${changed} posts`);
+  } catch (err) {
+    console.warn('[db] Hashtag backfill skipped:', err.message);
+  }
 }
 
 function ensureUniqueUsernameIndex(database) {
@@ -289,6 +322,20 @@ function connectDB() {
   db = new Database(dbPath);
   db.pragma('foreign_keys = ON');
   db.pragma('journal_mode = DELETE');
+  // Match #hashtag tokens in post bodies (used by tag filters).
+  db.function('has_hashtag', (body, tag) => {
+    const t = String(tag || '')
+      .trim()
+      .toLowerCase()
+      .replace(/^#+/, '');
+    if (!t || t.length < 2) return 0;
+    const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    try {
+      return new RegExp(`(^|[^&\\w/#])#${escaped}\\b`, 'i').test(String(body || '')) ? 1 : 0;
+    } catch {
+      return 0;
+    }
+  });
   db.exec(SCHEMA);
   migrate(db);
   backfillPageLoadGeo(db);

@@ -1,5 +1,5 @@
 const MAX_HASHTAG_LEN = 32;
-const MAX_HASHTAGS_PER_POST = 12;
+const MAX_HASHTAGS_PER_POST = 24;
 
 /** Normalize a single hashtag: strip #, lowercase, slugify-ish. */
 function normalizeHashtag(input) {

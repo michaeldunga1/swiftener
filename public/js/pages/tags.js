@@ -16,7 +16,10 @@ function normalizeTagParam(raw) {
   return String(raw || '')
     .trim()
     .replace(/^#+/, '')
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 32);
 }
 
 export async function renderTagPage(root, { tag: rawTag } = {}) {

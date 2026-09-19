@@ -3,7 +3,7 @@ const Interaction = require('../models/Interaction');
 const { generateUniqueSlug } = require('../utils/slugify');
 const { renderMarkdown, extractToc } = require('../utils/markdown');
 const { readingStats } = require('../utils/reading');
-const { resolvePostHashtags } = require('../utils/hashtags');
+const { resolvePostHashtags, normalizeHashtag } = require('../utils/hashtags');
 const { notifySubscribersOfNewPostAsync } = require('../utils/newsletterNotify');
 
 async function createPost(req, res, next) {
@@ -94,7 +94,7 @@ async function listPosts(req, res, next) {
     const { page = 1, limit = 12, category, tag, q } = req.query;
     const filter = {
       category: category || undefined,
-      tag: tag ? String(tag).replace(/^#+/, '').toLowerCase() : undefined,
+      tag: tag ? normalizeHashtag(tag) || undefined : undefined,
       q: q || undefined,
     };
 

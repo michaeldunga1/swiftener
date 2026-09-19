@@ -169,10 +169,16 @@ const Post = {
       params.push(category);
     }
     if (tag) {
-      where.push(`EXISTS (
-        SELECT 1 FROM json_each(p.tags) je WHERE lower(je.value) = lower(?)
+      // Match stored tags (normalized) or #hashtag mentions still only in the body.
+      where.push(`(
+        EXISTS (
+          SELECT 1 FROM json_each(p.tags) je
+          WHERE lower(replace(replace(trim(je.value), ' ', '-'), '_', '-')) = ?
+             OR lower(trim(je.value)) = ?
+        )
+        OR has_hashtag(p.body, ?)
       )`);
-      params.push(tag);
+      params.push(tag, tag, tag);
     }
     if (q) {
       where.push('(p.title LIKE ? OR p.body LIKE ? OR p.tags LIKE ?)');
@@ -202,10 +208,15 @@ const Post = {
       params.push(filter.category);
     }
     if (filter.tag) {
-      where.push(`EXISTS (
-        SELECT 1 FROM json_each(tags) je WHERE lower(je.value) = lower(?)
+      where.push(`(
+        EXISTS (
+          SELECT 1 FROM json_each(tags) je
+          WHERE lower(replace(replace(trim(je.value), ' ', '-'), '_', '-')) = ?
+             OR lower(trim(je.value)) = ?
+        )
+        OR has_hashtag(body, ?)
       )`);
-      params.push(filter.tag);
+      params.push(filter.tag, filter.tag, filter.tag);
     }
     if (filter.q) {
       where.push('(title LIKE ? OR body LIKE ? OR tags LIKE ?)');
