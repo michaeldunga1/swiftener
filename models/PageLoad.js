@@ -151,6 +151,26 @@ const PageLoad = {
     return { total, uniqueIps, today, topPaths, topIps, byDay };
   },
 
+  /** Most-visited public paths (excludes API, admin, auth noise). */
+  topPublicPaths(limit = 8) {
+    const n = Math.min(20, Math.max(3, Number(limit) || 8));
+    return getDb()
+      .prepare(
+        `SELECT path, COUNT(*) AS count
+         FROM page_loads
+         WHERE IFNULL(is_bot, 0) = 0
+           AND path NOT LIKE '/api%'
+           AND path NOT LIKE '/admin%'
+           AND path NOT LIKE '/uploads%'
+           AND path NOT LIKE '/auth%'
+           AND path NOT IN ('/login', '/register', '/forgot-password', '/reset-password', '/verify-email')
+         GROUP BY path
+         ORDER BY count DESC
+         LIMIT ?`
+      )
+      .all(n);
+  },
+
   demographics() {
     const db = getDb();
 

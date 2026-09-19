@@ -15,6 +15,40 @@ async function loadMarked() {
   return markedModPromise;
 }
 
+function normalizeHashtag(input) {
+  const slug = String(input || '')
+    .trim()
+    .replace(/^#+/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 32);
+  if (!slug || slug.length < 2) return null;
+  if (!/^[a-z][a-z0-9_-]*$/.test(slug)) return null;
+  return slug;
+}
+
+/** Link bare #hashtags in markdown (outside code fences/headings). */
+export function linkHashtagsInMarkdown(src = '') {
+  const parts = String(src).split(/(```[\s\S]*?```|`[^`]+`)/);
+  return parts
+    .map((part, i) => {
+      if (i % 2 === 1) return part;
+      return part
+        .split('\n')
+        .map((line) => {
+          if (/^\s{0,3}#{1,6}\s/.test(line)) return line;
+          return line.replace(/(^|[^&\w/#])#([a-zA-Z][\w-]{0,31})\b/g, (match, pre, raw) => {
+            const tag = normalizeHashtag(raw);
+            if (!tag) return match;
+            return `${pre}[#${tag}](/tags/${encodeURIComponent(tag)})`;
+          });
+        })
+        .join('\n');
+    })
+    .join('');
+}
+
 /** True when a string still looks like unrendered markdown rather than HTML. */
 export function looksLikeMarkdown(text = '') {
   const s = String(text);
@@ -35,12 +69,20 @@ export function looksLikeMarkdown(text = '') {
  * markdown never appears as plain text; fall back to server HTML if needed.
  */
 export async function htmlForPostBody(post = {}) {
-  const source = post.body || '';
+  const source = linkHashtagsInMarkdown(post.body || '');
   try {
     const marked = await loadMarked();
     const parse = marked.parse ? marked.parse.bind(marked) : marked;
     const html = parse(source, { breaks: true, gfm: true });
-    if (html && String(html).trim()) return html;
+    if (html && String(html).trim()) {
+      return String(html).replace(
+        /<a\s+([^>]*?)href="(\/tags\/[^"]+)"([^>]*)>/gi,
+        (m, pre, href, post) => {
+          if (/\bdata-link\b/i.test(pre + post)) return m;
+          return `<a ${pre}href="${href}" data-link${post}>`;
+        }
+      );
+    }
   } catch {
     /* fall through */
   }

@@ -900,6 +900,123 @@ a.tag:hover {
   background: color-mix(in srgb, var(--signal) 22%, transparent);
 }
 
+.article-body a.hashtag,
+.article-body a[href^="/tags/"] {
+  color: var(--signal-dark);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--signal) 35%, transparent);
+}
+
+.article-body a.hashtag:hover,
+.article-body a[href^="/tags/"]:hover {
+  border-bottom-color: var(--signal);
+}
+
+.tag-page-header {
+  margin-bottom: 1.25rem;
+}
+
+.tag-page-header .hero-brand {
+  margin: 0.15rem 0 0.35rem;
+  font-size: clamp(1.85rem, 4vw, 2.5rem);
+}
+
+.tag-page-actions {
+  margin: 0.85rem 0 0;
+}
+
+.popular-section {
+  margin-top: 2.75rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.popular-header {
+  margin-bottom: 1.15rem;
+}
+
+.popular-header h2 {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  letter-spacing: -0.02em;
+}
+
+.popular-header .muted {
+  margin: 0;
+}
+
+.popular-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .popular-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 960px) {
+  .popular-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.popular-col h3 {
+  margin: 0 0 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.popular-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.popular-list a {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0.15rem;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  min-height: 2.25rem;
+}
+
+.popular-list a:hover {
+  color: var(--signal-dark);
+  border-bottom-color: color-mix(in srgb, var(--signal) 30%, transparent);
+}
+
+.popular-list a span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.popular-count {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.popular-empty {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
 .tag-row {
   display: flex;
   flex-wrap: wrap;

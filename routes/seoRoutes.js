@@ -46,6 +46,17 @@ function mountSeoRoutes(app) {
       'Subscribe for new Swiftener How-to guides and updates.'
     )
   );
+  app.get('/tags/:tag', (req, res) => {
+    const tag = String(req.params.tag || '')
+      .trim()
+      .replace(/^#+/, '')
+      .toLowerCase();
+    seo.sendStaticPageHtml(
+      `/tags/${encodeURIComponent(tag)}`,
+      `#${tag}`,
+      `Guides tagged #${tag} on Swiftener.`
+    )(req, res);
+  });
 
   app.get('/posts/:tag/:slug', seo.sendPostHtml);
   app.get('/posts/:slug', seo.sendPostHtml);

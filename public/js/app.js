@@ -6,6 +6,7 @@ import { escapeHtml, toast, userPath } from './ui.js';
 import { initConsent, hasAdsConsent, hasAnalyticsConsent, openConsentSettings } from './consent.js';
 import { renderHome } from './pages/home.js';
 import { renderPost } from './pages/post.js';
+import { renderTagPage } from './pages/tags.js';
 import {
   renderLogin,
   renderRegister,
@@ -160,6 +161,7 @@ function renderFooter() {
 }
 
 route(/^\/$/, renderHome);
+route(/^\/tags\/(?<tag>[^/]+)$/, (root, params) => renderTagPage(root, params));
 route(/^\/posts\/(?<tag>[^/]+)\/(?<slug>[^/]+)$/, (root, params) => renderPost(root, params));
 route(/^\/posts\/(?<slug>[^/]+)$/, (root, params) => renderPost(root, params));
 route(/^\/login$/, renderLogin);

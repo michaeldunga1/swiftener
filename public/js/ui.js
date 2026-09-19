@@ -31,12 +31,22 @@ export function postPath(post, { hash = '' } = {}) {
 }
 
 export function tagFilterHref(tag) {
-  return `/?tag=${encodeURIComponent(tag)}`;
+  const t = String(tag || '')
+    .trim()
+    .replace(/^#+/, '')
+    .toLowerCase();
+  if (!t) return '/';
+  return `/tags/${encodeURIComponent(t)}`;
 }
 
 export function renderTagLinks(tags) {
   return (tags || [])
-    .map((t) => `<a href="${tagFilterHref(t)}" data-link class="tag">${escapeHtml(t)}</a>`)
+    .map((t) => {
+      const label = String(t || '').replace(/^#+/, '');
+      if (!label) return '';
+      return `<a href="${tagFilterHref(label)}" data-link class="tag">#${escapeHtml(label)}</a>`;
+    })
+    .filter(Boolean)
     .join('');
 }
 

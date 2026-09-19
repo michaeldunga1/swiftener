@@ -1,15 +1,17 @@
 const { marked } = require('marked');
 const sanitizeHtml = require('sanitize-html');
 const { tagSlug } = require('./postPath');
+const { linkHashtagsInMarkdown } = require('./hashtags');
 
 function renderMarkdown(raw) {
-  const html = marked.parse(raw || '', { breaks: true, gfm: true });
+  const withHashtags = linkHashtagsInMarkdown(raw || '');
+  const html = marked.parse(withHashtags, { breaks: true, gfm: true });
   return sanitizeHtml(html, {
     allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'h1', 'h2', 'del']),
     allowedAttributes: {
       ...sanitizeHtml.defaults.allowedAttributes,
       img: ['src', 'alt', 'title'],
-      a: ['href', 'name', 'target', 'rel'],
+      a: ['href', 'name', 'target', 'rel', 'class'],
       h1: ['id'],
       h2: ['id'],
       h3: ['id'],
@@ -18,6 +20,15 @@ function renderMarkdown(raw) {
       h6: ['id'],
     },
     allowedSchemes: ['http', 'https', 'mailto'],
+    transformTags: {
+      a: (tagName, attribs) => {
+        const href = attribs.href || '';
+        if (href.startsWith('/tags/')) {
+          return { tagName, attribs: { ...attribs, class: 'hashtag' } };
+        }
+        return { tagName, attribs };
+      },
+    },
   });
 }
 

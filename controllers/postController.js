@@ -3,6 +3,7 @@ const Interaction = require('../models/Interaction');
 const { generateUniqueSlug } = require('../utils/slugify');
 const { renderMarkdown, extractToc } = require('../utils/markdown');
 const { readingStats } = require('../utils/reading');
+const { resolvePostHashtags } = require('../utils/hashtags');
 const { notifySubscribersOfNewPostAsync } = require('../utils/newsletterNotify');
 
 async function createPost(req, res, next) {
@@ -19,7 +20,7 @@ async function createPost(req, res, next) {
       body,
       excerpt: excerpt || '',
       category,
-      tags: Array.isArray(tags) ? tags.map((t) => t.toLowerCase().trim()) : [],
+      tags: resolvePostHashtags(tags, body),
       coverImage: coverImage || '',
       author: req.user._id,
       status: nextStatus,
@@ -52,8 +53,12 @@ async function updatePost(req, res, next) {
     if (body !== undefined) updates.body = body;
     if (excerpt !== undefined) updates.excerpt = excerpt;
     if (category !== undefined) updates.category = category;
-    if (tags !== undefined) updates.tags = tags.map((t) => t.toLowerCase().trim());
     if (coverImage !== undefined) updates.coverImage = coverImage;
+
+    const nextBody = body !== undefined ? body : post.body;
+    if (tags !== undefined || body !== undefined) {
+      updates.tags = resolvePostHashtags(tags !== undefined ? tags : post.tags, nextBody);
+    }
 
     if (status && status !== post.status) {
       updates.status = status;
@@ -89,7 +94,7 @@ async function listPosts(req, res, next) {
     const { page = 1, limit = 12, category, tag, q } = req.query;
     const filter = {
       category: category || undefined,
-      tag: tag ? tag.toLowerCase() : undefined,
+      tag: tag ? String(tag).replace(/^#+/, '').toLowerCase() : undefined,
       q: q || undefined,
     };
 
@@ -108,6 +113,15 @@ async function listPosts(req, res, next) {
 async function listFacets(req, res, next) {
   try {
     res.json(Post.listFacets());
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function listPopular(req, res, next) {
+  try {
+    const limit = Number(req.query.limit || 8);
+    res.json(Post.listPopular({ limit }));
   } catch (err) {
     next(err);
   }
@@ -169,6 +183,7 @@ module.exports = {
   deletePost,
   listPosts,
   listFacets,
+  listPopular,
   listDrafts,
   getPostBySlug,
   getAdminPost,

@@ -157,8 +157,8 @@ export async function renderAdminPostEditor(root, { id } = {}) {
       <form id="post-editor" class="form-stack" style="max-width:100%">
         <label>Title<input name="title" required value="${escapeHtml(post?.title || '')}" /></label>
         <label>Category<input name="category" required value="${escapeHtml(post?.category || '')}" /></label>
-        <label>Tags <span class="hint">comma-separated</span>
-          <input name="tags" value="${escapeHtml((post?.tags || []).join(', '))}" /></label>
+        <label>Hashtags <span class="hint">comma-separated; #tags in the body are added automatically</span>
+          <input name="tags" value="${escapeHtml((post?.tags || []).map((t) => `#${String(t).replace(/^#/, '')}`).join(', '))}" placeholder="#linux, #homelab" /></label>
         <label>Excerpt<textarea name="excerpt">${escapeHtml(post?.excerpt || '')}</textarea></label>
         <label>Cover image URL
           <input id="cover-image-url" name="coverImage" value="${escapeHtml(post?.coverImage || '')}" placeholder="https://… or upload below" />

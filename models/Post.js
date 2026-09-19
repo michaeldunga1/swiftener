@@ -306,6 +306,35 @@ const Post = {
     return { categories, tags };
   },
 
+  /** Public discover data for the home popular section. */
+  listPopular({ limit = 8 } = {}) {
+    const n = Math.min(20, Math.max(3, Number(limit) || 8));
+    const { categories, tags } = this.listFacets();
+    const guides = this.topByViews(n).map((p) => ({
+      _id: p._id,
+      title: p.title,
+      slug: p.slug,
+      category: p.category,
+      tags: p.tags,
+      viewsCount: p.viewsCount,
+      coverImage: p.coverImage,
+    }));
+    let pages = [];
+    try {
+      const PageLoad = require('./PageLoad');
+      pages = PageLoad.topPublicPaths(n);
+    } catch {
+      pages = [];
+    }
+    return {
+      categories: categories.slice(0, n),
+      tags: tags.slice(0, n),
+      hashtags: tags.slice(0, n),
+      guides,
+      pages,
+    };
+  },
+
   listForSitemap() {
     return getDb()
       .prepare(
